@@ -1,11 +1,26 @@
-import { Logo } from '@/components/ui/Logo';
+import { Audiences, Features, HowItWorks, SmartEntry } from '@/features/landing/Sections';
+import { Faq } from '@/features/landing/Faq';
+import { FinalCta } from '@/features/landing/FinalCta';
+import { Footer } from '@/features/landing/Footer';
+import { Header } from '@/features/landing/Header';
+import { Hero } from '@/features/landing/Hero';
+import { Pricing } from '@/features/landing/Pricing';
 
-/** Provisória. A landing page completa entra na etapa 1B. */
 export function LandingPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <Logo size={36} />
-      <h1 className="text-h1">Controle seu dinheiro. Entenda suas escolhas.</h1>
-    </main>
+    <>
+      <Header />
+      <main>
+        <Hero />
+        <HowItWorks />
+        <Features />
+        <Audiences />
+        <SmartEntry />
+        <Pricing />
+        <Faq />
+        <FinalCta />
+      </main>
+      <Footer />
+    </>
   );
 }

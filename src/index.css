@@ -8,11 +8,15 @@
   }
   html {
     background: #050505;
+    scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
   body {
     @apply bg-canvas font-sans text-fg antialiased;
     font-feature-settings: 'cv11', 'ss01';
+  }
+  section[id] {
+    scroll-margin-top: 4.5rem;
   }
   ::selection {
     background: rgba(34, 197, 94, 0.35);

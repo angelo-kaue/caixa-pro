@@ -109,7 +109,7 @@ begin
   perform test.check('B não enxerga regras de A', (select count(*) from public.category_rules where workspace_id = ws_a) = 0);
   perform test.check('B não enxerga assinatura de A', (select count(*) from public.subscriptions where workspace_id = ws_a) = 0);
   perform test.check('B enxerga só o próprio espaço', (select count(*) from public.workspaces) = 1);
-  perform test.fails(format($f$ insert into public.transactions (workspace_id, kind, amount_cents, description) values (%L, 'expense', 100, 'invasão') $f$, ws_a), 'row-level security');
+  perform test.fails(format($f$ insert into public.transactions (workspace_id, kind, amount_cents, description) values (%L, 'expense', 100, 'invasão') $f$, ws_a), 'FORBIDDEN');
   perform test.fails(format($f$ insert into public.categories (workspace_id, name, kind) values (%L, 'Invasora', 'expense') $f$, ws_a), 'row-level security');
   perform test.fails(format($f$ insert into public.category_rules (workspace_id, keyword, category_id) values (%L, 'x', %L) $f$, ws_a, cat_a), 'row-level security');
   update public.transactions set description = 'hack' where id = tx_a; get diagnostics n = row_count;
@@ -123,7 +123,7 @@ begin
   -- mover transação própria para o espaço de A é bloqueado
   insert into public.transactions (workspace_id, kind, amount_cents, description, category_id, occurred_on, idempotency_key)
     values (ws_b, 'expense', 2500, 'Fornecedor', cat_b, v_m, 'aaaaaaaa-0000-0000-0000-000000000001') returning id into tx_b;
-  perform test.fails(format($f$ update public.transactions set workspace_id = %L where id = %L $f$, ws_a, tx_b), 'WORKSPACE_IMMUTABLE');
+  perform test.fails(format($f$ update public.transactions set workspace_id = %L where id = %L $f$, ws_a, tx_b), 'FORBIDDEN');
   perform test.fails(format($f$ update public.transactions set created_by = %L where id = %L $f$, ua, tx_b), 'CREATED_BY_IMMUTABLE');
   -- idempotência
   perform test.fails(format($f$ insert into public.transactions (workspace_id, kind, amount_cents, description, idempotency_key) values (%L, 'expense', 2500, 'Fornecedor', 'aaaaaaaa-0000-0000-0000-000000000001') $f$, ws_b), 'duplicate key');

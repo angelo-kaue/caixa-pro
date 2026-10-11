@@ -6,12 +6,14 @@ import { Alert } from '@/components/ui/Alert';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Field';
 import { Money } from '@/components/ui/Money';
-import { PLANS } from '@/config/plans';
+import { PLANS, hasFeature } from '@/config/plans';
 import { formatDateBR, formatMonthYearBR, monthBounds, shiftMonth, todayISO } from '@/domain/dates';
 import { mapDbError } from '@/services/dbErrors';
 import { getSummary, listTransactions } from '@/services/transactionService';
 import type { Summary, Transaction } from '@/types/db';
 import { Loading } from '@/features/workspace/guards';
+import { BillsGlance } from './BillsGlance';
+import { InsightsCard } from './InsightsCard';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
 type Period = 'month' | 'prev' | 'custom';
@@ -149,6 +151,9 @@ export function DashboardPage() {
                 </div>
               </dl>
             </section>
+
+            {business && <BillsGlance balanceCents={summary.balance_cents} />}
+            {hasFeature(plan, 'insights') && <InsightsCard />}
 
             {!hasData ? (
               <div className="rounded-lg border border-line">

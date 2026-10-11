@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PLANS, type PlanId } from '@/config/plans';
+import { PLANS, hasFeature, type PlanId } from '@/config/plans';
 import type { Kind, UserRule } from '@/domain/categorizer';
 import { monthBounds, todayISO } from '@/domain/dates';
 import { mapDbError } from '@/services/dbErrors';
+import { generateRecurring } from '@/services/planningService';
 import { countTransactionsBetween } from '@/services/transactionService';
 import { getMyWorkspace, getWorkspacePlan, listCategories, listRules } from '@/services/workspaceService';
 import type { Category, CategoryRuleRow, Workspace } from '@/types/db';
@@ -92,6 +93,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [dataVersion, status, workspace, plan]);
+
+  // Cria os lançamentos recorrentes já vencidos (Pro). Idempotente: pode rodar a cada abertura.
+  const wsId = workspace?.id ?? null;
+  useEffect(() => {
+    if (status !== 'ready' || !wsId || !hasFeature(plan, 'recurring')) return;
+    let active = true;
+    void generateRecurring(wsId)
+      .then((n) => {
+        if (active && n > 0) setDataVersion((v) => v + 1);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [status, wsId, plan]);
 
   const userRules = useMemo<UserRule[]>(() => {
     const byId = new Map(categories.map((c) => [c.id, c.name]));

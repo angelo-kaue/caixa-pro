@@ -49,3 +49,57 @@ export interface Summary {
   effective_from: string;
   categories: SummaryCategory[];
 }
+
+export interface Budget {
+  id: string;
+  category_id: string;
+  amount_cents: number;
+  active: boolean;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  target_cents: number;
+  current_cents: number;
+  target_date: string | null;
+}
+
+export interface RecurringRule {
+  id: string;
+  kind: Kind;
+  amount_cents: number;
+  description: string;
+  category_id: string | null;
+  payment_method: PaymentMethod | null;
+  day_of_month: number;
+  start_on: string;
+  end_on: string | null;
+  active: boolean;
+}
+
+export interface Bill {
+  id: string;
+  /** expense = a pagar, income = a receber */
+  kind: Kind;
+  description: string;
+  amount_cents: number;
+  due_on: string;
+  category_id: string | null;
+  status: 'pending' | 'paid';
+  paid_on: string | null;
+}
+
+export interface BillsOverview {
+  payable_cents: number;
+  receivable_cents: number;
+  overdue_payable_cents: number;
+  overdue_receivable_cents: number;
+  overdue_count: number;
+}
+
+export interface SeriesPoint {
+  month: string;
+  income_cents: number;
+  expense_cents: number;
+}

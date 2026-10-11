@@ -46,7 +46,8 @@ public/                    manifest, service worker, ícones
 
 - Toda tabela tem RLS ligado e privilégios mínimos para `authenticated`; `anon` não acessa nada.
 - Espaço de trabalho criado só por `create_workspace()` (atômico: espaço, vínculo de administrador, assinatura Free e categorias padrão).
-- Limites do Free (100 lançamentos/mês por mês do lançamento, janela de histórico de 3 meses) são aplicados por trigger e RLS no banco.
+- Limites do Free (100 lançamentos/mês por mês do lançamento, janela de histórico de 3 meses, 3 orçamentos ativos) e recursos do Pro (metas, recorrências, gráficos avançados) são aplicados por trigger, RLS e funções no banco.
+- Os gatilhos de limite checam a associação ao espaço antes de qualquer regra, para não vazar informação de outros espaços.
 - `subscriptions` e `workspace_members` são somente leitura para o cliente; a escrita será feita pelo backend (Fase 4/5).
 - A chave `service_role` nunca vai para o front-end nem para o repositório.
 
@@ -54,5 +55,5 @@ Setup do Supabase e deploy: veja [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Status
 
-Fases 1 e 2 implementadas (fundação, landing, autenticação, espaço de trabalho, lançamentos, histórico e resumo). Próximo: Fase 3 (gráficos, orçamentos, metas, insights, recorrências, contas a pagar/receber, exportação).
+Fases 1, 2 e 3 implementadas (fundação, landing, autenticação, lançamentos, resumo, orçamentos, metas, recorrências, contas a pagar/receber, relatórios, insights e exportação). Próximo: Fase 4 (monetização: pagamentos, assinaturas, webhooks).
 Pagamentos reais **não** estão implementados.

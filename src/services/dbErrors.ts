@@ -11,6 +11,18 @@ export function mapDbError(error: unknown): string {
   if (msg.includes('HISTORY_LIMIT')) {
     return `Essa data está fora do histórico do seu plano (últimos ${PLANS.free.limits.historyMonths} meses).`;
   }
+  if (msg.includes('BUDGET_LIMIT_REACHED')) {
+    return `O plano Free permite até ${PLANS.free.limits.maxActiveBudgets} orçamentos ativos. Pause ou exclua um para criar outro.`;
+  }
+  if (msg.includes('BUDGET_ALREADY_EXISTS')) return 'Já existe um orçamento para essa categoria. Edite o que já existe.';
+  if (msg.includes('BUDGET_NEEDS_EXPENSE_CATEGORY')) return 'Orçamentos só podem ser criados para categorias de despesa.';
+  if (msg.includes('FEATURE_NOT_AVAILABLE')) return 'Este recurso faz parte do plano Pro.';
+  if (msg.includes('BUSINESS_ONLY')) return 'Contas a pagar e a receber estão disponíveis só para espaços de negócio.';
+  if (msg.includes('ALREADY_PAID')) return 'Esta conta já foi baixada.';
+  if (msg.includes('NOT_PAID')) return 'Esta conta ainda não foi baixada.';
+  if (msg.includes('BILL_PAID_LOCKED')) return 'Contas já baixadas não podem ser alteradas. Desfaça a baixa para editar.';
+  if (msg.includes('CATEGORY_KIND_MISMATCH')) return 'A categoria escolhida não combina com o tipo (receita ou despesa).';
+  if (msg.includes('INVALID_DATE')) return 'Informe uma data válida.';
   if (msg.includes('WORKSPACE_ALREADY_EXISTS')) return 'Você já tem um espaço de trabalho configurado.';
   if (msg.includes('INVALID_NAME')) return 'Informe um nome de 1 a 80 caracteres.';
   if (msg.includes('INVALID_BALANCE')) return 'O saldo inicial informado é inválido.';

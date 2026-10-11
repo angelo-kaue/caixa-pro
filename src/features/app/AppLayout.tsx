@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { List, LayoutDashboard } from 'lucide-react';
+import { BarChart3, FileText, LayoutDashboard, List, Target } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import clsx from 'clsx';
 import { PLANS } from '@/config/plans';
@@ -10,15 +10,19 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { QuickEntry } from '@/features/transactions/QuickEntry';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
-const nav = [
+const baseNav = [
   { to: '/app', label: 'Resumo', icon: LayoutDashboard, end: true },
   { to: '/app/lancamentos', label: 'Lançamentos', icon: List, end: false },
+  { to: '/app/planejamento', label: 'Planejamento', icon: Target, end: false },
 ] as const;
+const billsNav = { to: '/app/contas', label: 'Contas', icon: FileText, end: false } as const;
+const reportsNav = { to: '/app/relatorios', label: 'Relatórios', icon: BarChart3, end: false } as const;
 
 export function AppLayout() {
   const { workspace, plan } = useWorkspace();
   const { signOut } = useAuth();
   const [leaving, setLeaving] = useState(false);
+  const nav = workspace?.type === 'business' ? [...baseNav, billsNav, reportsNav] : [...baseNav, reportsNav];
 
   return (
     <div className="min-h-screen">
@@ -68,8 +72,8 @@ export function AppLayout() {
 
       <nav
         aria-label="Principal (mobile)"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-line bg-canvas sm:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-canvas sm:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
       >
         {nav.map(({ to, label, icon: Icon, end }) => (
           <NavLink
@@ -77,7 +81,7 @@ export function AppLayout() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              clsx('flex flex-col items-center gap-1 py-2.5 text-xs font-semibold', isActive ? 'text-brand' : 'text-mute')
+              clsx('flex flex-col items-center gap-1 py-2.5 text-[0.7rem] font-semibold', isActive ? 'text-brand' : 'text-mute')
             }
           >
             <Icon size={20} aria-hidden="true" />

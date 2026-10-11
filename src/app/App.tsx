@@ -2,8 +2,10 @@ import { lazy, Suspense } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { GuestOnly, RequireAuth } from '@/features/auth/guards';
 import { AppLayout } from '@/features/app/AppLayout';
+import { BillsPage } from '@/features/bills/BillsPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage';
+import { PlanningPage } from '@/features/planning/PlanningPage';
 import { InstallHint } from '@/features/pwa/InstallHint';
 import { TransactionsPage } from '@/features/transactions/TransactionsPage';
 import { RequireWorkspace } from '@/features/workspace/guards';
@@ -17,6 +19,7 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { SignupPage } from '@/pages/auth/SignupPage';
 
+const ReportsPage = lazy(() => import('@/features/reports/ReportsPage'));
 const DesignSystemPage = import.meta.env.DEV ? lazy(() => import('@/pages/DesignSystemPage')) : null;
 
 export function App() {
@@ -49,6 +52,16 @@ export function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="lancamentos" element={<TransactionsPage />} />
+            <Route path="planejamento" element={<PlanningPage />} />
+            <Route path="contas" element={<BillsPage />} />
+            <Route
+              path="relatorios"
+              element={
+                <Suspense fallback={null}>
+                  <ReportsPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Route>
         {DesignSystemPage && (

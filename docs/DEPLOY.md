@@ -5,7 +5,8 @@
 ## 1. Supabase
 
 1. **Banco:** no SQL Editor do projeto, execute na ordem os arquivos de `supabase/migrations/`:
-   `0001_core_schema.sql` → `0002_functions_and_triggers.sql` → `0003_rls_policies.sql`.
+   `0001_core_schema.sql` → `0002_functions_and_triggers.sql` → `0003_rls_policies.sql` → `0004_workspace_summary.sql`.
+   (Se você já rodou as três primeiras, rode apenas a `0004`.)
    Não execute nada de `supabase/tests/` no projeto real (é só para testes locais).
 2. **URLs de autenticação** (Authentication → URL Configuration):
    - *Site URL*: `http://localhost:5173` durante o desenvolvimento; troque pelo domínio de produção no lançamento.

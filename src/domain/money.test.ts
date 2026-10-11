@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_AMOUNT_CENTS,
+  formatCentsForInput,
   formatCentsToBRL,
   isValidAmountCents,
   parseMoneyToCents,
@@ -84,5 +85,15 @@ describe('sumCents', () => {
   it('soma sem erro de arredondamento', () => {
     expect(sumCents([10, 20, 30])).toBe(60);
     expect(sumCents([])).toBe(0);
+  });
+});
+
+describe('formatCentsForInput', () => {
+  it('gera texto aceito de volta pelo parser', () => {
+    expect(formatCentsForInput(5000)).toBe('50,00');
+    expect(formatCentsForInput(123456)).toBe('1234,56');
+    expect(formatCentsForInput(5)).toBe('0,05');
+    expect(parseMoneyToCents(formatCentsForInput(123456))).toBe(123456);
+    expect(formatCentsForInput(-1)).toBe('');
   });
 });

@@ -29,7 +29,12 @@ Em desenvolvimento, `/sistema-de-design` mostra os tokens e componentes base (n�
 src/config/plans.ts        catálogo único de planos, preços e limites (front)
 src/domain/money.ts        dinheiro em centavos: parse BR, formatação, validação
 src/features/landing/      landing page
+src/domain/parser.ts       registro inteligente (valor, tipo, data, pagamento, categoria por regras)
 src/features/auth/         Supabase Auth: provider, guards, schemas, serviços
+src/features/workspace/    espaço de trabalho, categorias e regras do usuário (provider)
+src/features/transactions/ lançamento rápido, formulário, histórico
+src/features/dashboard/    resumo financeiro com dados reais
+src/services/              acesso ao Supabase (única camada que fala com o banco)
 src/features/pwa/          orientação de instalação (iOS Safari e navegadores compatíveis)
 src/components/ui/         design system (botão, campos, tabela, alerta, etc.)
 supabase/migrations/       SQL versionado (schema, funções/triggers, RLS)
@@ -49,5 +54,5 @@ Setup do Supabase e deploy: veja [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Status
 
-Fase 1 (fundação, landing page, banco e autenticação) concluída. Próximo: Fase 2 (espaço de trabalho, lançamentos, histórico, dashboard).
+Fases 1 e 2 implementadas (fundação, landing, autenticação, espaço de trabalho, lançamentos, histórico e resumo). Próximo: Fase 3 (gráficos, orçamentos, metas, insights, recorrências, contas a pagar/receber, exportação).
 Pagamentos reais **não** estão implementados.

@@ -87,3 +87,9 @@ export function formatCentsToBRL(cents: number): string {
 export function sumCents(values: readonly number[]): number {
   return values.reduce((acc, v) => acc + v, 0);
 }
+
+/** Valor para preencher um campo de texto: "1234,56" (sem separador de milhar). */
+export function formatCentsForInput(cents: number): string {
+  if (!Number.isSafeInteger(cents) || cents < 0) return '';
+  return `${Math.trunc(cents / 100)},${String(cents % 100).padStart(2, '0')}`;
+}

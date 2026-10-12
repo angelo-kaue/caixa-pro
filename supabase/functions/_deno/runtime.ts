@@ -1,7 +1,7 @@
 // Código específico do ambiente Deno / Supabase Edge Functions (não é verificado pelo tsc do projeto).
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import type { CheckoutRow, ExistingSub, PlanPrice } from '../_shared/billing-core.ts';
-import type { BillingDb } from '../_shared/billing-flow.ts';
+import type { BillingDb, RecentCheckout } from '../_shared/billing-flow.ts';
 
 export function env(name: string): string {
   const value = Deno.env.get(name);
@@ -41,6 +41,18 @@ export function createBillingDb(sb: SupabaseClient): BillingDb {
       const { data, error } = await sb.from('billing_checkouts').select('id, workspace_id, plan_id, mode').eq('id', id).maybeSingle();
       if (error) throw error;
       return (data as CheckoutRow | null) ?? null;
+    },
+    async listRecentCheckouts(workspaceId) {
+      const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const { data, error } = await sb
+        .from('billing_checkouts')
+        .select('id, workspace_id, plan_id, mode, provider_ref')
+        .eq('workspace_id', workspaceId)
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data ?? []) as RecentCheckout[];
     },
     async getPlanPrice(plan) {
       const { data, error } = await sb.from('plans').select('id, price_cents').eq('id', plan).maybeSingle();

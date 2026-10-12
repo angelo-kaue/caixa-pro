@@ -73,6 +73,10 @@ export function createMpClient(accessToken: string, fetchImpl: typeof fetch = fe
     getPreapproval: (id) => call<MpPreapproval>('GET', `/preapproval/${encodeURIComponent(id)}`),
     getAuthorizedPayment: (id) => call<MpAuthorizedPayment>('GET', `/authorized_payments/${encodeURIComponent(id)}`),
     getPayment: (id) => call<MpPayment>('GET', `/v1/payments/${encodeURIComponent(id)}`),
+    searchPaymentsByReference: async (reference) => {
+      const out = await call<{ results?: MpPayment[] }>('GET', `/v1/payments/search?external_reference=${encodeURIComponent(reference)}&sort=date_created&criteria=desc&limit=10`);
+      return out.results ?? [];
+    },
     cancelPreapproval: async (id) => {
       await call('PUT', `/preapproval/${encodeURIComponent(id)}`, { status: 'cancelled' });
     },

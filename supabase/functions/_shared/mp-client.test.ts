@@ -86,3 +86,16 @@ describe('detalhe do erro do Mercado Pago', () => {
     expect(dump).not.toContain('a@b.com');
   });
 });
+
+describe('busca de pagamentos pela referência', () => {
+  it('chama o endpoint de busca com a referência codificada e devolve os resultados', async () => {
+    const f = fakeFetch(200, { results: [{ id: 1, status: 'approved' }, { id: 2, status: 'pending' }] });
+    const out = await createMpClient('t', f).searchPaymentsByReference('abc 123');
+    expect(out.map((p) => p.id)).toEqual([1, 2]);
+    const [url] = (f as unknown as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(url).toContain('https://api.mercadopago.com/v1/payments/search?external_reference=abc%20123');
+  });
+  it('sem resultados devolve lista vazia', async () => {
+    expect(await createMpClient('t', fakeFetch(200, {})).searchPaymentsByReference('x')).toEqual([]);
+  });
+});

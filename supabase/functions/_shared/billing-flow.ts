@@ -17,10 +17,17 @@ export interface MpApi {
   getAuthorizedPayment(id: string): Promise<MpAuthorizedPayment>;
   getPayment(id: string): Promise<MpPayment>;
   cancelPreapproval(id: string): Promise<void>;
+  searchPaymentsByReference(reference: string): Promise<MpPayment[]>;
+}
+
+export interface RecentCheckout extends CheckoutRow {
+  provider_ref: string | null;
 }
 
 export interface BillingDb {
   getCheckout(id: string): Promise<CheckoutRow | null>;
+  /** Compras criadas recentemente para o espaço de trabalho (mais novas primeiro). */
+  listRecentCheckouts(workspaceId: string): Promise<RecentCheckout[]>;
   getPlanPrice(plan: string): Promise<PlanPrice | null>;
   getSubscription(workspaceId: string): Promise<ExistingSub | null>;
   applySubscription(p: {
@@ -109,4 +116,44 @@ export async function processBillingEvent(deps: BillingDeps, topic: WebhookTopic
     case 'payment':
       return reconcilePix(deps, await deps.mp.getPayment(resourceId));
   }
+}
+
+export interface SyncResult {
+  checkoutId: string;
+  mode: 'card' | 'pix';
+  outcomes: string[];
+}
+
+/**
+ * Confirma ativamente, junto ao provedor, as compras recentes de um espaço de trabalho.
+ * Não depende do webhook: é chamada quando o cliente volta do pagamento. Idempotente.
+ */
+export async function syncWorkspace(deps: BillingDeps, workspaceId: string): Promise<SyncResult[]> {
+  const checkouts = await deps.db.listRecentCheckouts(workspaceId);
+  const results: SyncResult[] = [];
+  // Só a compra de cartão mais recente é reconciliada: uma antiga ainda "autorizada" não pode substituir a atual.
+  let cardHandled = false;
+
+  for (const c of checkouts) {
+    const outcomes: string[] = [];
+    try {
+      if (c.mode === 'pix') {
+        const payments = await deps.mp.searchPaymentsByReference(c.id);
+        if (payments.length === 0) outcomes.push('sem_pagamento_encontrado');
+        for (const p of payments) outcomes.push(await reconcilePix(deps, p));
+      } else if (cardHandled) {
+        outcomes.push('ignored:compra_de_cartao_mais_antiga');
+      } else if (!c.provider_ref) {
+        cardHandled = true;
+        outcomes.push('sem_assinatura_criada');
+      } else {
+        cardHandled = true;
+        outcomes.push(await reconcileCard(deps, await deps.mp.getPreapproval(c.provider_ref)));
+      }
+    } catch (e) {
+      outcomes.push(`erro:${String(e).slice(0, 160)}`);
+    }
+    results.push({ checkoutId: c.id, mode: c.mode, outcomes });
+  }
+  return results;
 }

@@ -42,6 +42,20 @@ export async function createCheckout(plan: 'pro', mode: 'card' | 'pix'): Promise
   return url;
 }
 
+export interface SyncOutcome {
+  checkoutId: string;
+  mode: 'card' | 'pix';
+  outcomes: string[];
+}
+
+/** Pede ao servidor para confirmar, junto ao Mercado Pago, as compras recentes. No modo de teste devolve o diagnóstico. */
+export async function syncBilling(): Promise<SyncOutcome[] | null> {
+  const { data, error } = await getSupabase().functions.invoke('sync-billing', { body: {} });
+  if (error) throw await failure(error);
+  const debug = (data as { debug?: unknown } | null)?.debug;
+  return Array.isArray(debug) ? (debug as SyncOutcome[]) : null;
+}
+
 export async function cancelSubscription(): Promise<void> {
   const { error } = await getSupabase().functions.invoke('cancel-subscription', { body: {} });
   if (error) throw await failure(error);

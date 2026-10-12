@@ -13,8 +13,8 @@
 Por que o Pix não é recorrente: a assinatura automática do Mercado Pago cobra em cartão. O "Pix Automático" existe,
 mas exige habilitação própria da API e não faz parte desta versão.
 
-Fluxo: app → Edge Function `create-checkout` → página do Mercado Pago → **webhook assinado** → `mp-webhook` consulta a
-API do Mercado Pago e grava o plano no banco. O navegador nunca concede plano: o front-end só exibe o estado.
+Fluxo: app → Edge Function `create-checkout` → página do Mercado Pago → volta ao app, que chama `sync-billing` (confirma
+ativamente com o Mercado Pago). O **webhook assinado** (`mp-webhook`) é o reforço: também consulta a API do Mercado Pago e grava o plano. O navegador nunca concede plano: o front-end só exibe o estado.
 
 - Só o **Pro** pode ser contratado hoje (o servidor recusa outros planos). O Enterprise será vendido quando existir (Fase 5).
 - O preço vem da tabela `plans`, nunca do navegador. O webhook confere valor, moeda e referência da compra.
@@ -52,6 +52,7 @@ npx supabase secrets set \
 npx supabase functions deploy mp-webhook --no-verify-jwt   # o Mercado Pago não envia JWT
 npx supabase functions deploy create-checkout
 npx supabase functions deploy cancel-subscription
+npx supabase functions deploy sync-billing
 ```
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` já existem no ambiente das funções. A `service_role`
 fica só lá.

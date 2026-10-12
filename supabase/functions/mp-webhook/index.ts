@@ -18,7 +18,11 @@ Deno.serve(async (req) => {
   }
 
   const parsed = parseWebhookRequest(new URL(req.url), body);
-  if (!parsed) return new Response('Bad request', { status: 400 });
+  if (!parsed) {
+    const url = new URL(req.url);
+    console.warn('webhook recusado: sem data.id', JSON.stringify({ params: [...url.searchParams.keys()], assinatura: req.headers.has('x-signature') }));
+    return new Response('Bad request', { status: 400 });
+  }
 
   const requestId = req.headers.get('x-request-id');
   const valid = await verifyMpSignature({
@@ -27,7 +31,11 @@ Deno.serve(async (req) => {
     requestId,
     dataId: parsed.dataId,
   });
-  if (!valid) return new Response('Invalid signature', { status: 401 });
+  if (!valid) {
+    console.warn('webhook recusado: assinatura inválida', JSON.stringify({ tipo: parsed.rawTopic, assinatura: req.headers.has('x-signature'), requestId: Boolean(requestId) }));
+    return new Response('Invalid signature', { status: 401 });
+  }
+  console.log('webhook recebido', JSON.stringify({ tipo: parsed.rawTopic, id: parsed.dataId }));
 
   const sb = serviceClient();
   const eventKey = `${requestId ?? 'noreq'}:${parsed.rawTopic}:${parsed.dataId}`;
@@ -51,6 +59,7 @@ Deno.serve(async (req) => {
       parsed.dataId,
     );
     await record(outcome);
+    console.log('webhook processado', JSON.stringify({ tipo: parsed.rawTopic, resultado: outcome }));
     return new Response('ok');
   } catch (e) {
     // 500 faz o Mercado Pago reenviar a notificação depois.

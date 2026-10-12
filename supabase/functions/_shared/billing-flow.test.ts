@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CheckoutRow, ExistingSub, MpPayment, MpPreapproval } from './billing-core.ts';
-import { processBillingEvent, type BillingDeps } from './billing-flow.ts';
+import { processBillingEvent, syncWorkspace, type BillingDeps, type RecentCheckout } from './billing-flow.ts';
 
 const CK = '22222222-2222-4222-8222-222222222222';
 const now = new Date('2026-10-10T12:00:00Z');
@@ -12,6 +12,8 @@ interface World {
   payments: Record<string, MpPayment>;
   authorized: Record<string, { id: string; preapproval_id: string | null }>;
   granted: Set<string>;
+  recent: RecentCheckout[];
+  search: Record<string, MpPayment[]>;
 }
 
 function setup(over: Partial<World> = {}) {
@@ -22,6 +24,8 @@ function setup(over: Partial<World> = {}) {
     payments: {},
     authorized: {},
     granted: new Set(),
+    recent: [],
+    search: {},
     ...over,
   };
   const applySubscription = vi.fn(async (_p: unknown) => undefined);
@@ -38,6 +42,7 @@ function setup(over: Partial<World> = {}) {
       getPayment: async (id) => w.payments[id] ?? Promise.reject(new Error('404')),
       getAuthorizedPayment: async (id) => w.authorized[id] ?? Promise.reject(new Error('404')),
       cancelPreapproval,
+      searchPaymentsByReference: async (ref) => w.search[ref] ?? [],
     },
     db: {
       getCheckout: async (id) => (w.checkout && w.checkout.id === id ? w.checkout : null),
@@ -45,6 +50,7 @@ function setup(over: Partial<World> = {}) {
       getSubscription: async () => w.existing,
       applySubscription,
       grantPeriod,
+      listRecentCheckouts: async () => w.recent,
     },
   };
   return { deps, w, applySubscription, grantPeriod, cancelPreapproval };
@@ -154,5 +160,68 @@ describe('pagamento avulso (Pix)', () => {
     });
     await processBillingEvent(t.deps, 'payment', '555');
     expect(t.cancelPreapproval).toHaveBeenCalledWith('pre-card');
+  });
+});
+
+describe('sincronização ativa (sem webhook)', () => {
+  const pixCk: RecentCheckout = { id: CK, workspace_id: 'ws-1', plan_id: 'pro', mode: 'pix', provider_ref: 'pref-1' };
+  const cardCk = (id: string, ref: string | null): RecentCheckout => ({ id, workspace_id: 'ws-1', plan_id: 'pro', mode: 'card', provider_ref: ref });
+  const paid: MpPayment = { id: 901, status: 'approved', external_reference: CK, transaction_amount: 19.9, currency_id: 'BRL' };
+
+  it('Pix pago é encontrado pela referência e concede o plano', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk], search: { [CK]: [paid] } });
+    const r = await syncWorkspace(t.deps, 'ws-1');
+    expect(r).toEqual([{ checkoutId: CK, mode: 'pix', outcomes: ['granted'] }]);
+    expect(t.grantPeriod).toHaveBeenCalledOnce();
+  });
+
+  it('chamar de novo não concede duas vezes', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk], search: { [CK]: [paid] } });
+    await syncWorkspace(t.deps, 'ws-1');
+    const again = await syncWorkspace(t.deps, 'ws-1');
+    expect(again[0]?.outcomes).toEqual(['ignored:already_applied']);
+  });
+
+  it('sem pagamento encontrado, informa o motivo', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk] });
+    expect((await syncWorkspace(t.deps, 'ws-1'))[0]?.outcomes).toEqual(['sem_pagamento_encontrado']);
+    expect(t.grantPeriod).not.toHaveBeenCalled();
+  });
+
+  it('pagamento pendente não concede', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk], search: { [CK]: [{ ...paid, status: 'pending' }] } });
+    expect((await syncWorkspace(t.deps, 'ws-1'))[0]?.outcomes).toEqual(['ignored:not_approved']);
+  });
+
+  it('assinatura de cartão autorizada é aplicada a partir da assinatura criada', async () => {
+    const t = setup({ recent: [cardCk(CK, 'pre-1')], preapprovals: { 'pre-1': authorizedPre() } });
+    expect((await syncWorkspace(t.deps, 'ws-1'))[0]?.outcomes).toEqual(['applied:active']);
+    expect(t.applySubscription).toHaveBeenCalledOnce();
+  });
+
+  it('compra de cartão sem assinatura criada é sinalizada', async () => {
+    const t = setup({ recent: [cardCk(CK, null)] });
+    expect((await syncWorkspace(t.deps, 'ws-1'))[0]?.outcomes).toEqual(['sem_assinatura_criada']);
+  });
+
+  it('só a compra de cartão mais recente é reconciliada (a antiga não substitui a atual)', async () => {
+    const OLD = '33333333-3333-4333-8333-333333333333';
+    const t = setup({ recent: [cardCk(CK, 'pre-new'), cardCk(OLD, 'pre-old')], preapprovals: { 'pre-new': { ...authorizedPre('pre-new') } } });
+    const r = await syncWorkspace(t.deps, 'ws-1');
+    expect(r[0]?.outcomes).toEqual(['applied:active']);
+    expect(r[1]?.outcomes).toEqual(['ignored:compra_de_cartao_mais_antiga']);
+    expect(t.applySubscription).toHaveBeenCalledOnce();
+  });
+
+  it('erro do provedor vira resultado, não exceção (as outras compras continuam)', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [cardCk('44444444-4444-4444-8444-444444444444', 'pre-x'), pixCk], search: { [CK]: [paid] } });
+    const r = await syncWorkspace(t.deps, 'ws-1');
+    expect(r[0]?.outcomes[0]).toMatch(/^erro:/);
+    expect(r[1]?.outcomes).toEqual(['granted']);
+  });
+
+  it('sem compras recentes, nada acontece', async () => {
+    const t = setup();
+    expect(await syncWorkspace(t.deps, 'ws-1')).toEqual([]);
   });
 });

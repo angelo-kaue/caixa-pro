@@ -9,7 +9,7 @@ import { BILLING_ENABLED, PIX_PERIOD_DAYS, SELLABLE_PLANS } from '@/config/billi
 import { PLANS, PLAN_ORDER, type PlanId } from '@/config/plans';
 import { formatDateBR, toISODate } from '@/domain/dates';
 import { formatCentsToBRL } from '@/domain/money';
-import { cancelSubscription, createCheckout } from '@/services/billingService';
+import { cancelSubscription, createCheckout, syncBilling, type SyncOutcome } from '@/services/billingService';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
 const RETURN_PARAMS = ['preapproval_id', 'payment_id', 'collection_id', 'collection_status', 'status'];
@@ -32,30 +32,61 @@ export function PlanPage() {
   const [busy, setBusy] = useState<'card' | 'pix' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [diagnostic, setDiagnostic] = useState<SyncOutcome[] | null>(null);
   const planRef = useRef<PlanId>(plan);
   planRef.current = plan;
 
-  // Ao voltar do Mercado Pago, o plano só muda quando o webhook chegar: consulta algumas vezes.
+  // Pergunta ao servidor se o pagamento já foi confirmado pelo Mercado Pago e atualiza o plano.
+  async function checkNow(): Promise<boolean> {
+    try {
+      const d = await syncBilling();
+      if (d) setDiagnostic(d);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível verificar agora.');
+    }
+    await refreshBilling();
+    return planRef.current !== 'free';
+  }
+
+  // Ao voltar do Mercado Pago, verifica na hora e depois a cada poucos segundos (sem depender do webhook).
   useEffect(() => {
     if (!returned) return;
     let tries = 0;
-    const timer = window.setInterval(async () => {
+    let stopped = false;
+    const finish = () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+    const tick = async () => {
+      if (stopped) return;
       tries += 1;
-      await refreshBilling();
-      if (planRef.current !== 'free') {
-        window.clearInterval(timer);
+      const done = await checkNow();
+      if (stopped) return;
+      if (done) {
+        finish();
         setConfirming(false);
         bump();
         setParams({}, { replace: true });
       } else if (tries >= POLL_MAX) {
-        window.clearInterval(timer);
+        finish();
         setConfirming(false);
         setTimedOut(true);
       }
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
+    };
+    const timer = window.setInterval(() => void tick(), POLL_MS);
+    void tick();
+    return finish;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returned]);
+
+  async function manualCheck() {
+    setChecking(true);
+    setError(null);
+    const done = await checkNow();
+    setChecking(false);
+    if (done) bump();
+  }
 
   async function buy(mode: 'card' | 'pix') {
     setBusy(mode);
@@ -82,6 +113,22 @@ export function PlanPage() {
       {confirming && <Alert tone="info">Estamos confirmando seu pagamento com o Mercado Pago. Isso costuma levar alguns segundos; Pix e cartão podem levar alguns minutos.</Alert>}
       {timedOut && <Alert tone="info">Ainda não recebemos a confirmação. Se você concluiu o pagamento, o plano será liberado assim que o Mercado Pago avisar. Atualize esta página em alguns minutos.</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
+      {diagnostic && (
+        <Alert tone="info">
+          <p className="font-semibold text-fg">Diagnóstico (modo de teste)</p>
+          {diagnostic.length === 0 ? (
+            <p>Nenhuma compra recente encontrada para este espaço.</p>
+          ) : (
+            <ul className="mt-1 list-disc pl-5">
+              {diagnostic.map((d) => (
+                <li key={d.checkoutId}>
+                  {d.mode === 'pix' ? 'Pix' : 'Cartão'}: {d.outcomes.join(', ')}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Alert>
+      )}
       {!BILLING_ENABLED && <Alert tone="info">A contratação de planos pagos ainda não está disponível. Você continua usando o plano Free sem custo.</Alert>}
 
       <section aria-label="Plano atual">
@@ -99,6 +146,14 @@ export function PlanPage() {
           </ul>
         )}
         {plan === 'free' && subscription && subscription.status === 'canceled' && <p className="mt-3 text-sm text-mute">Seu plano pago terminou. Seus dados continuam guardados.</p>}
+        {BILLING_ENABLED && plan === 'free' && (
+          <div className="mt-4">
+            <Button variant="secondary" size="sm" loading={checking} onClick={() => void manualCheck()}>
+              Já paguei: verificar agora
+            </Button>
+            <p className="mt-1.5 text-xs text-faint">Use se você concluiu o pagamento e o plano ainda aparece como Free.</p>
+          </div>
+        )}
         {canCancel && (
           <Button variant="secondary" size="sm" className="mt-4" onClick={() => setCancelOpen(true)}>
             Cancelar assinatura

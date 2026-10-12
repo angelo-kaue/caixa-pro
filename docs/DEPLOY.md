@@ -5,7 +5,7 @@
 ## 1. Supabase
 
 1. **Banco:** no SQL Editor do projeto, execute na ordem os arquivos de `supabase/migrations/`:
-   `0001_core_schema.sql` → `0002_functions_and_triggers.sql` → `0003_rls_policies.sql` → `0004_workspace_summary.sql` → `0005_planning_features.sql`.
+   `0001_core_schema.sql` → `0002_functions_and_triggers.sql` → `0003_rls_policies.sql` → `0004_workspace_summary.sql` → `0005_planning_features.sql` → `0006_billing.sql`.
    (Se você já rodou as anteriores, rode apenas as que faltam, em ordem.)
    Não execute nada de `supabase/tests/` no projeto real (é só para testes locais).
 2. **URLs de autenticação** (Authentication → URL Configuration):
@@ -42,3 +42,8 @@ git push -u origin main
 - Abrir `/app` sem login e confirmar o redirecionamento para `/entrar`.
 - Abrir `/qualquer-rota` direto na barra de endereço (o redirecionamento de SPA deve servir o app).
 - Conferir no DevTools que o Content-Security-Policy não bloqueia nada necessário.
+
+## 5. Cobrança (Mercado Pago)
+
+Veja [`docs/BILLING.md`](BILLING.md): migração `0006`, aplicação no Mercado Pago, secrets e deploy das Edge Functions,
+e como ligar `VITE_BILLING_ENABLED`.

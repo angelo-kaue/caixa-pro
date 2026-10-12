@@ -1,4 +1,6 @@
 import { Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BILLING_ENABLED } from '@/config/billing';
 
 interface UpgradeNoticeProps {
   title: string;
@@ -22,7 +24,13 @@ export function UpgradeNotice({ title, description, items }: UpgradeNoticeProps)
           ))}
         </ul>
       )}
-      <p className="mt-4 text-xs text-faint">A contratação do plano Pro ainda não está disponível. Avisaremos quando for liberada.</p>
+      {BILLING_ENABLED ? (
+        <Link to="/app/plano" className="mt-4 inline-block text-sm font-semibold text-brand hover:underline">
+          Ver o plano Pro
+        </Link>
+      ) : (
+        <p className="mt-4 text-xs text-faint">A contratação do plano Pro ainda não está disponível. Avisaremos quando for liberada.</p>
+      )}
     </div>
   );
 }

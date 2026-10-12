@@ -26,8 +26,8 @@ begin
   if p_ok is not true then raise exception 'FALHA: %', p_name; end if;
   raise notice 'PASS: %', p_name;
 end $$;
-grant usage on schema test to anon, authenticated;
-grant execute on all functions in schema test to anon, authenticated;
+grant usage on schema test to anon, authenticated, service_role;
+grant execute on all functions in schema test to anon, authenticated, service_role;
 
 do $$
 declare

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BarChart3, FileText, LayoutDashboard, List, Target } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import clsx from 'clsx';
 import { PLANS } from '@/config/plans';
 import { Badge } from '@/components/ui/Badge';
@@ -47,7 +47,9 @@ export function AppLayout() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden max-w-[12rem] truncate text-sm text-mute sm:inline">{workspace?.name}</span>
-            <Badge>{PLANS[plan].name}</Badge>
+            <Link to="/app/plano" aria-label={`Plano ${PLANS[plan].name}: ver plano e cobrança`}>
+              <Badge>{PLANS[plan].name}</Badge>
+            </Link>
             <Button
               variant="ghost"
               size="sm"

@@ -103,3 +103,11 @@ export interface SeriesPoint {
   income_cents: number;
   expense_cents: number;
 }
+
+export interface SubscriptionInfo {
+  plan_id: 'free' | 'pro' | 'enterprise';
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';
+  billing_mode: 'card' | 'pix' | null;
+  access_until: string | null;
+  cancel_at_period_end: boolean;
+}

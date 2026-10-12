@@ -21,6 +21,7 @@ Em desenvolvimento, `/sistema-de-design` mostra os tokens e componentes base (n�
 | `npm run build` | checagem de tipos + build de produção em `dist/` |
 | `npm test` | testes unitários e de renderização (Vitest) |
 | `npm run typecheck` | só a checagem de tipos |
+| `npm run typecheck:functions` | checa os tipos do código compartilhado das Edge Functions |
 | `npm run test:db` | aplica as migrações em um Postgres local descartável e roda os testes de RLS/limites (precisa de `psql` e de um Postgres local) |
 
 ## Estrutura
@@ -55,5 +56,5 @@ Setup do Supabase e deploy: veja [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Status
 
-Fases 1, 2 e 3 implementadas (fundação, landing, autenticação, lançamentos, resumo, orçamentos, metas, recorrências, contas a pagar/receber, relatórios, insights e exportação). Próximo: Fase 4 (monetização: pagamentos, assinaturas, webhooks).
-Pagamentos reais **não** estão implementados.
+Fases 1 a 4 implementadas. A cobrança (Mercado Pago: cartão em assinatura mensal e Pix de 30 dias) está pronta no código, mas **desligada** (`VITE_BILLING_ENABLED=false`) até você configurar as credenciais: veja `docs/BILLING.md`. Próximo: Fase 5 (Enterprise: equipes, papéis, unidades, auditoria).
+A cobrança nunca foi testada contra o Mercado Pago real (veja `docs/BILLING.md`).

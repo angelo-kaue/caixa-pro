@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import clsx from 'clsx';
 import { PLANS, PLAN_ORDER, type PlanConfig } from '@/config/plans';
 import { buttonClasses } from '@/components/ui/Button';
+import { BILLING_ENABLED } from '@/config/billing';
 import { formatCentsToBRL } from '@/domain/money';
 
 function priceLabel(plan: PlanConfig): { main: string; prefix?: string; suffix?: string } {
@@ -65,9 +66,10 @@ export function Pricing() {
             );
           })}
         </div>
-        <p className="mt-6 text-xs text-faint">
-          A contratação dos planos pagos ainda não está disponível: hoje toda conta começa no Free. Valores iniciais,
-          sujeitos a ajuste antes da cobrança.
+        <p className="mt-6 max-w-3xl text-xs text-faint">
+          {BILLING_ENABLED
+            ? 'O plano Pro pode ser contratado dentro do app, depois de criar a conta: no cartão (assinatura mensal que renova sozinha) ou no Pix (pagamento avulso de 30 dias). O Enterprise ainda está em desenvolvimento. Valores iniciais, sujeitos a ajuste.'
+            : 'A contratação dos planos pagos ainda não está disponível: hoje toda conta começa no Free. O Enterprise ainda está em desenvolvimento. Valores iniciais, sujeitos a ajuste antes da cobrança.'}
         </p>
       </div>
     </section>

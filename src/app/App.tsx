@@ -3,6 +3,7 @@ import { Outlet, Route, Routes } from 'react-router-dom';
 import { GuestOnly, RequireAuth } from '@/features/auth/guards';
 import { AppLayout } from '@/features/app/AppLayout';
 import { BillsPage } from '@/features/bills/BillsPage';
+import { PlanPage } from '@/features/billing/PlanPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage';
 import { PlanningPage } from '@/features/planning/PlanningPage';
@@ -53,6 +54,7 @@ export function App() {
             <Route index element={<DashboardPage />} />
             <Route path="lancamentos" element={<TransactionsPage />} />
             <Route path="planejamento" element={<PlanningPage />} />
+            <Route path="plano" element={<PlanPage />} />
             <Route path="contas" element={<BillsPage />} />
             <Route
               path="relatorios"

@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "allowImportingTsExtensions": true, "types": [] },
+  "include": ["supabase/functions/_shared/**/*.ts"]
+}

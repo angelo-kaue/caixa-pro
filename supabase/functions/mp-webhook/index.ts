@@ -3,7 +3,7 @@
 // A autenticidade vem da assinatura HMAC (x-signature) validada com MP_WEBHOOK_SECRET.
 import { parseWebhookRequest } from '../_shared/billing-core.ts';
 import { processBillingEvent } from '../_shared/billing-flow.ts';
-import { createMpClient } from '../_shared/mp-client.ts';
+import { MpError, createMpClient } from '../_shared/mp-client.ts';
 import { verifyMpSignature } from '../_shared/mp-signature.ts';
 import { createBillingDb, env, serviceClient } from '../_deno/runtime.ts';
 
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     return new Response('ok');
   } catch (e) {
     // 500 faz o Mercado Pago reenviar a notificação depois.
-    console.error('Falha ao processar webhook', parsed.rawTopic, parsed.dataId, String(e));
+    console.error('Falha ao processar webhook', parsed.rawTopic, parsed.dataId, String(e), e instanceof MpError ? (e.detail ?? '') : '');
     return new Response('error', { status: 500 });
   }
 });

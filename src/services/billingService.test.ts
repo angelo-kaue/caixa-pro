@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapBillingError } from './billingService';
+import { errorInfo, mapBillingError } from './billingService';
 
 describe('mapBillingError', () => {
   it.each([
@@ -14,5 +14,23 @@ describe('mapBillingError', () => {
     [undefined, 'Tente novamente'],
   ])('mapeia %s', (code, expected) => {
     expect(mapBillingError(code)).toContain(expected);
+  });
+});
+
+describe('errorInfo', () => {
+  const withBody = (body: unknown) => ({ context: new Response(JSON.stringify(body), { status: 502 }) });
+  it('lê código e detalhe técnico do corpo da resposta', async () => {
+    expect(await errorInfo(withBody({ error: 'PROVIDER_ERROR', detail: 'Both payer and collector must be real or test users' }))).toEqual({
+      code: 'PROVIDER_ERROR',
+      detail: 'Both payer and collector must be real or test users',
+    });
+  });
+  it('sem detalhe (produção) devolve só o código', async () => {
+    expect(await errorInfo(withBody({ error: 'FORBIDDEN' }))).toEqual({ code: 'FORBIDDEN', detail: null });
+  });
+  it('erros sem corpo JSON não quebram', async () => {
+    expect(await errorInfo({ context: new Response('texto', { status: 500 }) })).toEqual({ code: null, detail: null });
+    expect(await errorInfo(new Error('rede'))).toEqual({ code: null, detail: null });
+    expect(await errorInfo(null)).toEqual({ code: null, detail: null });
   });
 });

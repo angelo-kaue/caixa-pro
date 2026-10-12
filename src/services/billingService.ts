@@ -14,23 +14,29 @@ export function mapBillingError(code: string | null | undefined): string {
   return (code && MESSAGES[code]) || 'Não foi possível concluir agora. Tente novamente em instantes.';
 }
 
-/** Extrai o código de erro devolvido pelas Edge Functions ({ error: "CODIGO" }). */
-async function errorCode(error: unknown): Promise<string | null> {
+/** Extrai o código (e, no modo de teste, o detalhe técnico) devolvidos pelas Edge Functions. */
+export async function errorInfo(error: unknown): Promise<{ code: string | null; detail: string | null }> {
   const ctx = (error as { context?: unknown } | null)?.context;
   if (ctx instanceof Response) {
     try {
-      const body = (await ctx.clone().json()) as { error?: unknown };
-      return typeof body.error === 'string' ? body.error : null;
+      const body = (await ctx.clone().json()) as { error?: unknown; detail?: unknown };
+      return { code: typeof body.error === 'string' ? body.error : null, detail: typeof body.detail === 'string' ? body.detail : null };
     } catch {
-      return null;
+      return { code: null, detail: null };
     }
   }
-  return null;
+  return { code: null, detail: null };
+}
+
+async function failure(error: unknown): Promise<Error> {
+  const { code, detail } = await errorInfo(error);
+  const base = mapBillingError(code);
+  return new Error(detail ? `${base} Detalhe técnico (modo de teste): ${detail}` : base);
 }
 
 export async function createCheckout(plan: 'pro', mode: 'card' | 'pix'): Promise<string> {
   const { data, error } = await getSupabase().functions.invoke('create-checkout', { body: { plan, mode } });
-  if (error) throw new Error(mapBillingError(await errorCode(error)));
+  if (error) throw await failure(error);
   const url = (data as { url?: unknown } | null)?.url;
   if (typeof url !== 'string' || !url.startsWith('https://')) throw new Error(mapBillingError(null));
   return url;
@@ -38,7 +44,7 @@ export async function createCheckout(plan: 'pro', mode: 'card' | 'pix'): Promise
 
 export async function cancelSubscription(): Promise<void> {
   const { error } = await getSupabase().functions.invoke('cancel-subscription', { body: {} });
-  if (error) throw new Error(mapBillingError(await errorCode(error)));
+  if (error) throw await failure(error);
 }
 
 export async function getSubscription(workspaceId: string): Promise<SubscriptionInfo | null> {

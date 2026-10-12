@@ -1,7 +1,7 @@
 // Cria a cobrança no Mercado Pago. Exige usuário autenticado (JWT) e administrador do espaço de trabalho.
 // O preço vem SEMPRE da tabela `plans`, nunca do navegador.
 import { buildPreapprovalBody, buildPreferenceBody, isBillingMode, isSellablePlan } from '../_shared/billing-core.ts';
-import { createMpClient } from '../_shared/mp-client.ts';
+import { MpError, createMpClient } from '../_shared/mp-client.ts';
 import { corsHeaders, createBillingDb, env, json, serviceClient, userClient } from '../_deno/runtime.ts';
 
 const PLAN_NAMES = { pro: 'Pro', enterprise: 'Enterprise' } as const;
@@ -61,6 +61,10 @@ Deno.serve(async (req) => {
   }
 
   const backUrl = `${env('APP_URL').split(',')[0]?.trim().replace(/\/$/, '')}/app/plano`;
+  const sandbox = Deno.env.get('MP_SANDBOX') === 'true';
+  // No modo de teste, o Mercado Pago só aceita comprador de teste quando o vendedor é de teste.
+  // MP_TEST_PAYER_EMAIL = e-mail da conta de teste COMPRADORA. Em produção usa o e-mail do próprio usuário.
+  const payerEmail = sandbox ? (Deno.env.get('MP_TEST_PAYER_EMAIL') || email) : email;
   const mp = createMpClient(env('MP_ACCESS_TOKEN'));
 
   try {
@@ -68,7 +72,7 @@ Deno.serve(async (req) => {
     let providerRef: string;
     if (mode === 'card') {
       const created = await mp.createPreapproval(
-        buildPreapprovalBody({ reason: `CaixaPro ${PLAN_NAMES[plan]}`, payerEmail: email, externalReference: checkout.id, amountCents: price.price_cents, backUrl }),
+        buildPreapprovalBody({ reason: `CaixaPro ${PLAN_NAMES[plan]}`, payerEmail, externalReference: checkout.id, amountCents: price.price_cents, backUrl }),
       );
       url = created.init_point;
       providerRef = created.id;
@@ -82,13 +86,16 @@ Deno.serve(async (req) => {
           backUrl,
         }),
       );
-      url = Deno.env.get('MP_SANDBOX') === 'true' ? (created.sandbox_init_point ?? created.init_point) : created.init_point;
+      url = created.init_point;
       providerRef = created.id;
     }
     await sb.from('billing_checkouts').update({ provider_ref: providerRef }).eq('id', checkout.id);
     return json({ url }, 200, cors);
   } catch (e) {
-    console.error('Mercado Pago recusou a criação da cobrança', String(e));
-    return json({ error: 'PROVIDER_ERROR' }, 502, cors);
+    const status = e instanceof MpError ? e.status : null;
+    const detail = e instanceof MpError ? e.detail : null;
+    console.error('Mercado Pago recusou a criação da cobrança', JSON.stringify({ mode, status, detail, sandbox }));
+    // O detalhe técnico só volta para a tela no modo de teste.
+    return json({ error: 'PROVIDER_ERROR', ...(sandbox && detail ? { detail } : {}) }, 502, cors);
   }
 });

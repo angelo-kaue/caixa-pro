@@ -7,9 +7,29 @@ export class MpError extends Error {
   constructor(
     public readonly status: number,
     public readonly path: string,
+    /** Resumo seguro da resposta de erro do Mercado Pago (mensagem e causas). Nunca contém token nem dados de cartão. */
+    public readonly detail: string | null = null,
   ) {
     super(`Mercado Pago respondeu ${status} em ${path}`);
   }
+}
+
+/** Extrai só os campos de diagnóstico da resposta de erro (message, error e cause[].code/description). */
+export function describeErrorBody(body: unknown): string | null {
+  if (!body || typeof body !== 'object') return null;
+  const b = body as { message?: unknown; error?: unknown; cause?: unknown };
+  const parts: string[] = [];
+  if (typeof b.message === 'string') parts.push(b.message);
+  if (typeof b.error === 'string') parts.push(`(${b.error})`);
+  if (Array.isArray(b.cause)) {
+    for (const c of b.cause.slice(0, 5)) {
+      const cause = c as { code?: unknown; description?: unknown };
+      const text = [cause.code, cause.description].filter((x) => typeof x === 'string' || typeof x === 'number').join(': ');
+      if (text) parts.push(text);
+    }
+  }
+  const text = parts.join(' ').trim();
+  return text ? text.slice(0, 300) : null;
 }
 
 export interface CreatedPreapproval {
@@ -37,7 +57,15 @@ export function createMpClient(accessToken: string, fetchImpl: typeof fetch = fe
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    if (!res.ok) throw new MpError(res.status, path);
+    if (!res.ok) {
+      let detail: string | null = null;
+      try {
+        detail = describeErrorBody(await res.json());
+      } catch {
+        /* resposta sem JSON */
+      }
+      throw new MpError(res.status, path, detail);
+    }
     return (await res.json()) as T;
   }
 

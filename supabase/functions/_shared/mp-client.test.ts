@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MpError, createMpClient } from './mp-client.ts';
+import { MpError, createMpClient, describeErrorBody } from './mp-client.ts';
 
 function fakeFetch(status: number, json: unknown) {
   return vi.fn(async () => new Response(JSON.stringify(json), { status, headers: { 'Content-Type': 'application/json' } })) as unknown as typeof fetch & ReturnType<typeof vi.fn>;
@@ -56,5 +56,33 @@ describe('createMpClient', () => {
     const f = fakeFetch(200, { id: 'x' });
     await createMpClient('t', f).getPreapproval('a/b?c');
     expect(((f as unknown as ReturnType<typeof vi.fn>).mock.calls[0] as [string])[0]).toBe('https://api.mercadopago.com/preapproval/a%2Fb%3Fc');
+  });
+});
+
+describe('detalhe do erro do Mercado Pago', () => {
+  it('resume message, error e causas', () => {
+    expect(describeErrorBody({ message: 'Both payer and collector must be real or test users', error: 'bad_request', status: 400 })).toBe(
+      'Both payer and collector must be real or test users (bad_request)',
+    );
+    expect(describeErrorBody({ message: 'invalid', cause: [{ code: 123, description: 'payer_email inválido' }] })).toBe('invalid 123: payer_email inválido');
+  });
+
+  it('ignora o que não é diagnóstico e limita o tamanho', () => {
+    expect(describeErrorBody(null)).toBeNull();
+    expect(describeErrorBody('texto')).toBeNull();
+    expect(describeErrorBody({ token: 'segredo', card_number: '4111' })).toBeNull();
+    expect(describeErrorBody({ message: 'x'.repeat(1000) })?.length).toBe(300);
+  });
+
+  it('MpError carrega o detalhe e não vaza o token nem o corpo enviado', async () => {
+    const mp = createMpClient('TOKEN-SECRETO', fakeFetch(400, { message: 'Cannot operate between different countries', error: 'bad_request' }));
+    const err = (await mp.createPreapproval({ payer_email: 'a@b.com', card_number: '4111111111111111' }).catch((e: unknown) => e)) as MpError;
+    expect(err).toBeInstanceOf(MpError);
+    expect(err.status).toBe(400);
+    expect(err.detail).toBe('Cannot operate between different countries (bad_request)');
+    const dump = JSON.stringify({ message: err.message, detail: err.detail });
+    expect(dump).not.toContain('TOKEN-SECRETO');
+    expect(dump).not.toContain('4111');
+    expect(dump).not.toContain('a@b.com');
   });
 });

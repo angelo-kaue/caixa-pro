@@ -78,6 +78,38 @@ Defina `VITE_BILLING_ENABLED=true` (no `.env.local` e nas variáveis da Netlify)
 3. Revise com um contador/advogado: tributação da receita recorrente, política de cancelamento e reembolso (o Código de
    Defesa do Consumidor prevê direito de arrependimento em compras online) e os textos de Termos e Privacidade.
 
+## Testar com contas de teste (passo a passo)
+
+O Mercado Pago exige que, num teste, **vendedor e comprador sejam ambos contas de teste**. Misturar uma conta de teste com
+uma pessoa real (ou o contrário) causa o erro `400` na criação da cobrança.
+
+1. No painel de desenvolvedores, abra **Contas de teste** e crie **duas** contas: uma **vendedora** e uma **compradora**.
+   Anote e-mail e senha das duas (não dá para usar a mesma para os dois papéis).
+2. Entre no painel com a conta de teste **vendedora** (se pedir código por e-mail, siga a orientação do painel), crie uma
+   aplicação com ela e copie o **Access Token** das credenciais dessa aplicação. Numa conta de teste, as credenciais de
+   "produção" funcionam como credenciais de teste.
+3. Grave os secrets (troque pelos seus valores):
+   ```bash
+   npx supabase secrets set MP_ACCESS_TOKEN="<token da conta VENDEDORA de teste>" MP_SANDBOX=true MP_TEST_PAYER_EMAIL="<e-mail da conta COMPRADORA de teste>"
+   ```
+4. Publique de novo a função: `npx supabase functions deploy create-checkout`.
+5. No site, use uma **janela anônima**, entre no CaixaPro com qualquer e-mail e clique em **Assinar no cartão**.
+   Na página do Mercado Pago, entre com a conta **compradora de teste** e pague com um **cartão de teste** (veja a tabela
+   "Cartões de teste" na documentação do Mercado Pago; o nome do titular `APRO` simula aprovação).
+6. Para o **Pix** (Checkout Pro), repita em janela anônima, logado como a compradora de teste.
+
+Com `MP_SANDBOX=true`, se o Mercado Pago recusar, a tela mostra o **detalhe técnico** da recusa. Em produção ele não aparece
+(só vai para os logs). Quando for para produção: troque o token pelo da conta real, `MP_SANDBOX=false` e apague `MP_TEST_PAYER_EMAIL`.
+
+### Erros comuns
+| O que aparece | Causa provável | O que fazer |
+|---|---|---|
+| `Both payer and collector must be real or test users` | vendedor de teste com comprador real (ou o inverso) | passos 1 a 4 acima |
+| `Payer is associated with a different site` | e-mail do comprador não é de uma conta Mercado Pago do Brasil | use a conta compradora de teste |
+| `invalid_url` / problema com `back_url` | `APP_URL` errado ou sem https | `APP_URL` deve ser exatamente o endereço do site (https, sem `/` no final) |
+| "Ops, ocorreu um erro" na página do Mercado Pago | pagando logado com a conta real, ou com a mesma conta vendedora | janela anônima + conta compradora de teste |
+| `401` / `invalid_token` | token errado, de outra conta ou vencido | copie o token de novo (conta vendedora de teste) |
+
 ## CPF (sem CNPJ)
 O Mercado Pago permite abrir conta com CPF e, segundo o próprio material do Mercado Pago, receber por Pix e cobranças
 online. **Não consegui confirmar** em documentação oficial se as credenciais de produção da API de Assinaturas funcionam

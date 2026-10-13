@@ -105,7 +105,7 @@ export function DashboardPage() {
               type="button"
               aria-pressed={period === p.id}
               onClick={() => setPeriod(p.id)}
-              className={clsx('rounded px-3 py-1.5 text-sm font-semibold transition-colors', period === p.id ? 'bg-surface2 text-fg' : 'text-mute hover:text-fg')}
+              className={clsx('whitespace-nowrap rounded px-2.5 py-1.5 text-sm font-semibold transition-colors sm:px-3', period === p.id ? 'bg-surface2 text-fg' : 'text-mute hover:text-fg')}
             >
               {p.label}
             </button>

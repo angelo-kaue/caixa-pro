@@ -49,8 +49,8 @@ export interface SyncOutcome {
 }
 
 /** Pede ao servidor para confirmar, junto ao Mercado Pago, as compras recentes. No modo de teste devolve o diagnóstico. */
-export async function syncBilling(): Promise<SyncOutcome[] | null> {
-  const { data, error } = await getSupabase().functions.invoke('sync-billing', { body: {} });
+export async function syncBilling(paymentId?: string): Promise<SyncOutcome[] | null> {
+  const { data, error } = await getSupabase().functions.invoke('sync-billing', { body: paymentId ? { paymentId } : {} });
   if (error) throw await failure(error);
   const debug = (data as { debug?: unknown } | null)?.debug;
   return Array.isArray(debug) ? (debug as SyncOutcome[]) : null;

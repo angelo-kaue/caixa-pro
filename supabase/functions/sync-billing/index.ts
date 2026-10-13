@@ -21,6 +21,14 @@ Deno.serve(async (req) => {
   const { data: isAdmin } = await user.rpc('has_workspace_role', { p_workspace: ws.id, p_roles: ['admin'] });
   if (isAdmin !== true) return json({ error: 'FORBIDDEN' }, 403, cors);
 
+  let paymentId: string | undefined;
+  try {
+    const body = (await req.json()) as { paymentId?: unknown };
+    if (typeof body.paymentId === 'string' && /^\d{1,20}$/.test(body.paymentId)) paymentId = body.paymentId;
+  } catch {
+    /* sem corpo: segue só com a busca pelas compras recentes */
+  }
+
   try {
     const results = await syncWorkspace(
       {
@@ -30,6 +38,7 @@ Deno.serve(async (req) => {
         log: (message, extra) => console.warn(message, JSON.stringify(extra ?? {})),
       },
       ws.id,
+      { paymentId },
     );
     console.log('sync-billing', JSON.stringify(results));
     const debug = Deno.env.get('MP_SANDBOX') === 'true';

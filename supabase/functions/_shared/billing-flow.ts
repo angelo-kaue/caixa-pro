@@ -128,9 +128,24 @@ export interface SyncResult {
  * Confirma ativamente, junto ao provedor, as compras recentes de um espaço de trabalho.
  * Não depende do webhook: é chamada quando o cliente volta do pagamento. Idempotente.
  */
-export async function syncWorkspace(deps: BillingDeps, workspaceId: string): Promise<SyncResult[]> {
+export async function syncWorkspace(deps: BillingDeps, workspaceId: string, opts: { paymentId?: string } = {}): Promise<SyncResult[]> {
   const checkouts = await deps.db.listRecentCheckouts(workspaceId);
   const results: SyncResult[] = [];
+
+  // Caminho direto: o Mercado Pago devolve o número do pagamento na URL de retorno.
+  if (opts.paymentId) {
+    const outcomes: string[] = [];
+    try {
+      const payment = await deps.mp.getPayment(opts.paymentId);
+      // Só vale se o pagamento pertencer a uma compra recente DESTE espaço de trabalho.
+      const mine = checkouts.find((c) => c.id === payment.external_reference);
+      outcomes.push(mine ? await reconcilePix(deps, payment) : 'ignored:pagamento_nao_pertence_a_este_espaco');
+    } catch (e) {
+      outcomes.push(`erro:${String(e).slice(0, 160)}`);
+    }
+    results.push({ checkoutId: `payment-${opts.paymentId}`, mode: 'pix', outcomes });
+  }
+
   // Só a compra de cartão mais recente é reconciliada: uma antiga ainda "autorizada" não pode substituir a atual.
   let cardHandled = false;
 

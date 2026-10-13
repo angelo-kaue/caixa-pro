@@ -144,7 +144,7 @@ export function QuickEntry() {
             onChange={(e) => setText(e.target.value)}
             maxLength={200}
             autoComplete="off"
-            placeholder='Digite como falaria: "50 Uber", "Recebi 2500 de salário"'
+            placeholder='Ex.: "50 Uber" ou "Recebi 2500"'
             className="h-12 w-full rounded-md border border-line bg-canvas2 px-4 pr-10 text-[0.95rem] placeholder:text-faint focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
           <CornerDownLeft size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-faint" aria-hidden="true" />

@@ -225,3 +225,34 @@ describe('sincronização ativa (sem webhook)', () => {
     expect(await syncWorkspace(t.deps, 'ws-1')).toEqual([]);
   });
 });
+
+describe('consulta direta pelo número do pagamento', () => {
+  const pixCk: RecentCheckout = { id: CK, workspace_id: 'ws-1', plan_id: 'pro', mode: 'pix', provider_ref: 'pref-1' };
+  const pay = (over: Partial<MpPayment> = {}): MpPayment => ({ id: 901, status: 'approved', external_reference: CK, transaction_amount: 19.9, currency_id: 'BRL', ...over });
+
+  it('concede o plano mesmo quando a busca pela referência não encontra nada', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk], payments: { '901': pay() }, search: {} });
+    const r = await syncWorkspace(t.deps, 'ws-1', { paymentId: '901' });
+    expect(r[0]).toEqual({ checkoutId: 'payment-901', mode: 'pix', outcomes: ['granted'] });
+    expect(r[1]?.outcomes).toEqual(['sem_pagamento_encontrado']); // a busca pela referência não acha nada, e isso não atrapalha
+    expect(t.grantPeriod).toHaveBeenCalledOnce();
+  });
+
+  it('pagamento de outro espaço ou de outro sistema nunca concede', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk], payments: { '902': pay({ id: 902, external_reference: '55555555-5555-4555-8555-555555555555' }) } });
+    const r = await syncWorkspace(t.deps, 'ws-1', { paymentId: '902' });
+    expect(r[0]?.outcomes).toEqual(['ignored:pagamento_nao_pertence_a_este_espaco']);
+    expect(t.grantPeriod).not.toHaveBeenCalled();
+  });
+
+  it('pagamento pendente não concede', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk], payments: { '903': pay({ id: 903, status: 'pending' }) } });
+    expect((await syncWorkspace(t.deps, 'ws-1', { paymentId: '903' }))[0]?.outcomes).toEqual(['ignored:not_approved']);
+  });
+
+  it('número de pagamento inexistente vira resultado de erro, não exceção', async () => {
+    const t = setup({ checkout: { ...pixCk }, recent: [pixCk] });
+    const r = await syncWorkspace(t.deps, 'ws-1', { paymentId: '999' });
+    expect(r[0]?.outcomes[0]).toMatch(/^erro:/);
+  });
+});

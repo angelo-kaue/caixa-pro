@@ -76,18 +76,24 @@ export function BillsPage() {
       <dl className="grid grid-cols-1 divide-y divide-line border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="py-4 sm:pr-6">
           <dt className="text-sm text-mute">A pagar (pendente)</dt>
-          <dd className="mt-1 text-xl"><Money cents={o.payable_cents} tone="expense" /></dd>
-          {o.overdue_payable_cents > 0 && <p className="mt-1 text-xs text-warn">Em atraso: {<Money cents={o.overdue_payable_cents} className="text-warn" />}</p>}
+          <dd className="mt-1">
+            <span className="text-xl"><Money cents={o.payable_cents} tone="expense" /></span>
+            {o.overdue_payable_cents > 0 && <span className="mt-1 block text-xs text-warn">Em atraso: <Money cents={o.overdue_payable_cents} className="text-warn" /></span>}
+          </dd>
         </div>
         <div className="py-4 sm:px-6">
           <dt className="text-sm text-mute">A receber (pendente)</dt>
-          <dd className="mt-1 text-xl"><Money cents={o.receivable_cents} tone="income" /></dd>
-          {o.overdue_receivable_cents > 0 && <p className="mt-1 text-xs text-warn">Em atraso: {<Money cents={o.overdue_receivable_cents} className="text-warn" />}</p>}
+          <dd className="mt-1">
+            <span className="text-xl"><Money cents={o.receivable_cents} tone="income" /></span>
+            {o.overdue_receivable_cents > 0 && <span className="mt-1 block text-xs text-warn">Em atraso: <Money cents={o.overdue_receivable_cents} className="text-warn" /></span>}
+          </dd>
         </div>
         <div className="py-4 sm:pl-6">
           <dt className="text-sm text-mute">Saldo da diferença</dt>
-          <dd className="mt-1 text-xl"><Money cents={o.receivable_cents - o.payable_cents} tone="auto" /></dd>
-          <p className="mt-1 text-xs text-faint">A receber menos a pagar. Não considera o saldo atual.</p>
+          <dd className="mt-1">
+            <span className="text-xl"><Money cents={o.receivable_cents - o.payable_cents} tone="auto" /></span>
+            <span className="mt-1 block text-xs text-faint">A receber menos a pagar. Não considera o saldo atual.</span>
+          </dd>
         </div>
       </dl>
 
@@ -106,7 +112,7 @@ export function BillsPage() {
           <EmptyState icon={FileText} title={status === 'pending' ? 'Nenhuma conta pendente' : 'Nenhuma conta baixada ainda'} description={status === 'pending' ? 'Cadastre o que você tem a pagar e a receber para acompanhar os vencimentos.' : 'As contas aparecem aqui depois de baixadas.'} action={status === 'pending' ? <Button onClick={() => setEditing('new')}>Cadastrar conta</Button> : undefined} />
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Lista de contas">
           <table className="table-base">
             <thead>
               <tr>

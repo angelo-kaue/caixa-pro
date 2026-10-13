@@ -121,7 +121,7 @@ export default function ReportsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-h1">Relatórios</h1>
-          <p className="mt-1 text-sm capitalize text-mute">{formatMonthYearBR(month)}</p>
+          <p className="mt-1 text-sm text-mute first-letter:uppercase">{formatMonthYearBR(month)}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" aria-label="Mês anterior" onClick={() => setMonth(shiftMonth(month, -1))}>
@@ -143,7 +143,7 @@ export default function ReportsPage() {
           <>
             <section aria-label="Comparação com o mês anterior">
               <h2 className="text-h3">Comparação com o mês anterior</h2>
-              <div className="mt-4 overflow-x-auto">
+              <div className="mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label="Comparação com o mês anterior">
                 <table className="table-base">
                   <thead>
                     <tr>
@@ -175,10 +175,10 @@ export default function ReportsPage() {
               <h2 className="text-h3">Últimos 6 meses</h2>
               <div className="mt-4 h-64 w-full" role="img" aria-label={`Gráfico de barras com receitas e despesas dos últimos 6 meses. ${chartData.map((d) => `${d.label}: receitas ${formatCentsToBRL(d.Receitas)}, despesas ${formatCentsToBRL(d.Despesas)}`).join('; ')}`}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barGap={4}>
+                  <BarChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }} barGap={4}>
                     <CartesianGrid stroke="#262626" vertical={false} />
                     <XAxis dataKey="label" stroke="#8A8A8A" tickLine={false} axisLine={{ stroke: '#262626' }} fontSize={12} />
-                    <YAxis stroke="#8A8A8A" tickLine={false} axisLine={false} fontSize={12} tickFormatter={axisTick} width={44} />
+                    <YAxis stroke="#8A8A8A" tickLine={false} axisLine={false} fontSize={12} tickFormatter={axisTick} width={58} />
                     <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} contentStyle={{ background: '#111111', border: '1px solid #363636', borderRadius: 8, color: '#fff' }} formatter={(v: number) => formatCentsToBRL(v)} />
                     <Legend wrapperStyle={{ fontSize: 12, color: '#A3A3A3' }} />
                     <Bar dataKey="Receitas" fill="#22C55E" radius={[3, 3, 0, 0]} />
@@ -194,7 +194,7 @@ export default function ReportsPage() {
               {rows.length === 0 ? (
                 <p className="mt-3 text-sm text-mute">Sem movimentação neste mês nem no anterior.</p>
               ) : (
-                <div className="mt-4 overflow-x-auto">
+                <div className="mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label="Valores por categoria">
                   <table className="table-base">
                     <thead>
                       <tr>

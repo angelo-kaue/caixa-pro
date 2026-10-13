@@ -7,3 +7,4 @@ dist
 *.log
 .netlify
 coverage
+dist-e2e

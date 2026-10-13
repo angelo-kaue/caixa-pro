@@ -22,6 +22,8 @@ Em desenvolvimento, `/sistema-de-design` mostra os tokens e componentes base (n�
 | `npm test` | testes unitários e de renderização (Vitest) |
 | `npm run typecheck` | só a checagem de tipos |
 | `npm run typecheck:functions` | checa os tipos do código compartilhado das Edge Functions |
+| `npm run test:integration` | serviços do app contra Postgres + PostgREST reais (veja `docs/TESTING.md`) |
+| `npm run test:browser` | telas em celular/desktop, acessibilidade e fluxos (veja `docs/TESTING.md`) |
 | `npm run test:db` | aplica as migrações em um Postgres local descartável e roda os testes de RLS/limites (precisa de `psql` e de um Postgres local) |
 
 ## Estrutura

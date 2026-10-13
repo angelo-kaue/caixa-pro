@@ -27,6 +27,9 @@ export function PlanPage() {
   const { plan, subscription, refreshBilling, bump, workspace } = useWorkspace();
   const [params, setParams] = useSearchParams();
   const returned = RETURN_PARAMS.some((k) => params.has(k));
+  // O Mercado Pago devolve o número do pagamento na URL de retorno; só dígitos são aceitos.
+  const rawPaymentId = params.get('payment_id') ?? params.get('collection_id');
+  const paymentId = rawPaymentId && /^\d{1,20}$/.test(rawPaymentId) ? rawPaymentId : undefined;
   const [confirming, setConfirming] = useState(returned);
   const [timedOut, setTimedOut] = useState(false);
   const [busy, setBusy] = useState<'card' | 'pix' | null>(null);
@@ -40,7 +43,7 @@ export function PlanPage() {
   // Pergunta ao servidor se o pagamento já foi confirmado pelo Mercado Pago e atualiza o plano.
   async function checkNow(): Promise<boolean> {
     try {
-      const d = await syncBilling();
+      const d = await syncBilling(paymentId);
       if (d) setDiagnostic(d);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível verificar agora.');
@@ -140,9 +143,9 @@ export function PlanPage() {
         {plan !== 'free' && subscription && (
           <ul className="mt-3 space-y-1 text-sm text-mute">
             {until && <li>Acesso garantido até <strong className="num text-fg">{until}</strong></li>}
-            <li>
-              {subscription.billing_mode === 'card' ? 'Cartão: renovação automática todo mês.' : `Pix: pagamento avulso de ${PIX_PERIOD_DAYS} dias, sem renovação automática.`}
-            </li>
+            {subscription.billing_mode === 'card' && <li>Cartão: renovação automática todo mês.</li>}
+            {subscription.billing_mode === 'pix' && <li>Pix: pagamento avulso de {PIX_PERIOD_DAYS} dias, sem renovação automática.</li>}
+            {subscription.billing_mode === null && <li>Plano liberado manualmente, sem cobrança automática.</li>}
           </ul>
         )}
         {plan === 'free' && subscription && subscription.status === 'canceled' && <p className="mt-3 text-sm text-mute">Seu plano pago terminou. Seus dados continuam guardados.</p>}

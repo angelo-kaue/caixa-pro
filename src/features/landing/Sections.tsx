@@ -128,7 +128,7 @@ export function SmartEntry() {
             antes de salvar. A sugestão usa regras e palavras-chave em português, não inteligência artificial.
           </p>
         </div>
-        <div className="mt-10 overflow-x-auto">
+        <div className="mt-10 overflow-x-auto" tabIndex={0} role="region" aria-label="Exemplos de interpretação do registro inteligente">
           <table className="table-base min-w-[34rem]">
             <thead>
               <tr>

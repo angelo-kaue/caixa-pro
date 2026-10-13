@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "bash supabase/tests/run.sh",
-    "typecheck:functions": "tsc --noEmit -p tsconfig.functions.json"
+    "typecheck:functions": "tsc --noEmit -p tsconfig.functions.json",
+    "test:integration": "bash e2e/run.sh",
+    "test:browser": "node e2e/browser/run.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Receipt, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Receipt, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
+import clsx from 'clsx';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -44,6 +45,7 @@ export function TransactionsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   const wsId = workspace?.id;
   const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
@@ -129,11 +131,18 @@ export function TransactionsPage() {
     <div className="space-y-6">
       <h1 className="text-h1">Lançamentos</h1>
 
-      <section aria-label="Filtros" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-        <div className="relative sm:col-span-2">
+      <section aria-label="Filtros" className="space-y-3">
+        <div className="flex items-end gap-2">
+        <div className="relative flex-1">
           <Input label="Buscar por descrição" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" placeholder="Ex.: Uber" />
           <Search size={16} className="pointer-events-none absolute bottom-3 left-3 text-faint" aria-hidden="true" />
         </div>
+          <Button variant="secondary" className="sm:hidden" aria-expanded={showFilters} aria-controls="filtros-extras" onClick={() => setShowFilters((v) => !v)}>
+            <SlidersHorizontal size={16} aria-hidden="true" /> Filtros
+          </Button>
+        </div>
+        <div id="filtros-extras" className={clsx('gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5', showFilters ? 'grid' : 'hidden')}>
+
         <Select label="Tipo" value={filters.kind} onChange={(e) => setFilters((p) => ({ ...p, kind: e.target.value as Kind | '', categoryId: '' }))}>
           <option value="">Todos</option>
           <option value="expense">Despesas</option>
@@ -158,6 +167,7 @@ export function TransactionsPage() {
             <Button variant="ghost" onClick={clearFilters}>Limpar filtros</Button>
           </div>
         )}
+        </div>
       </section>
 
       {error && (
@@ -180,7 +190,7 @@ export function TransactionsPage() {
       ) : (
         !error && (
           <>
-            <div className="overflow-x-auto" aria-busy={loading}>
+            <div className="overflow-x-auto" aria-busy={loading} tabIndex={0} role="region" aria-label="Lista de lançamentos">
               <table className="table-base">
                 <thead>
                   <tr>
@@ -194,7 +204,10 @@ export function TransactionsPage() {
                 <tbody>
                   {rows.map((t) => (
                     <tr key={t.id}>
-                      <td className="num whitespace-nowrap text-mute">{formatDateBR(t.occurred_on)}</td>
+                      <td className="num whitespace-nowrap text-mute">
+                        <span className="sm:hidden">{formatDateBR(t.occurred_on).slice(0, 5)}</span>
+                        <span className="hidden sm:inline">{formatDateBR(t.occurred_on)}</span>
+                      </td>
                       <td>
                         <span className="block font-medium">{t.description}</span>
                         <span className="text-xs text-faint sm:hidden">{t.category_id ? (catName.get(t.category_id) ?? 'Sem categoria') : 'Sem categoria'}</span>

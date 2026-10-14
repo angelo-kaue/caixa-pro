@@ -98,6 +98,11 @@ for (const vp of ['mobile', 'desktop']) {
   await visit(`app-relatorios-free-${vp}`, vp, users.free, '/app/relatorios', { expectText: 'fazem parte do plano Pro' });
 }
 await visit('app-plano-retorno-pix', 'mobile', users.free, '/app/plano?payment_id=123456&status=approved', { expectText: 'Estamos confirmando seu pagamento', allowHttp: ['404', '502'] });
+for (const vp of ['mobile', 'desktop']) {
+  await visit(`app-conta-${vp}`, vp, users.free, '/app/conta', { expectText: ['Minha conta', 'Baixar meus dados', 'Excluir minha conta'] });
+}
+await visit('termos-completo', 'mobile', null, '/termos', { expectText: ['O que é o CaixaPro', 'Planos e preços', 'Cancelamento e reembolso'] });
+await visit('privacidade-completa', 'mobile', null, '/privacidade', { expectText: ['Quais dados tratamos', 'Seus direitos', 'Supabase'] });
 await visit('app-onboarding-mobile', 'mobile', users.empty, '/app', { expectText: 'Como você pretende usar o CaixaPro?' });
 
 // ---------- área logada: negócio Pro ----------
@@ -142,6 +147,23 @@ for (const vp of ['mobile', 'desktop']) {
     note('FALHA', 'fluxos-registro', e.message);
   } finally {
     note('INFO', 'fluxos-registro', `erros coletados: ${page.__errors.join(' | ') || 'nenhum'}`);
+    await page.__browser.close();
+  }
+}
+{
+  const page = await open('desktop', users.free);
+  try {
+    await page.goto(BASE + '/app/conta', { waitUntil: 'networkidle0' });
+    const btn = 'button.border-expense\\/40';
+    const disabledAtStart = await page.$eval(btn, (b) => b.disabled);
+    if (!disabledAtStart) note('FALHA', 'fluxo-excluir-conta', 'botão de exclusão deveria começar desabilitado');
+    await page.type('section[aria-labelledby="delete-title"] input', 'excluir');
+    const enabled = await page.$eval(btn, (b) => !b.disabled);
+    if (!enabled) note('FALHA', 'fluxo-excluir-conta', 'botão não habilitou após digitar EXCLUIR');
+    await page.screenshot({ path: `${OUT}/fluxo-excluir-conta.png` });
+  } catch (e) {
+    note('FALHA', 'fluxo-excluir-conta', e.message);
+  } finally {
     await page.__browser.close();
   }
 }

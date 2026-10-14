@@ -52,6 +52,10 @@ begin
   ok := public.grant_paid_period(ws_k, 'pro', 33, 'card-1', 'card', false, 'preapproval-abc');
   perform test.check('sem soma: período recomeça de agora', ok and (select access_until <= now() + interval '33 days' and provider_subscription_id = 'preapproval-abc' and billing_mode = 'card' from public.subscriptions where workspace_id = ws_k));
   perform test.check('eventos de concessão registrados', (select count(*) from public.payment_events where topic = 'grant') = 4);
+  -- Pix depois de cartão: o vínculo com a assinatura de cartão anterior é limpo e o estado vira "Pix ativo"
+  ok := public.grant_paid_period(ws_k, 'pro', 30, 'payment-4', 'pix', true, null);
+  perform test.check('Pix após cartão limpa a referência da assinatura anterior', ok and
+    (select provider_subscription_id is null and billing_mode = 'pix' and status = 'active' and not cancel_at_period_end from public.subscriptions where workspace_id = ws_k));
   perform test.fails(format($f$ select public.grant_paid_period(%L, 'free', 30, 'x', 'pix', true, null) $f$, ws_k), 'INVALID_GRANT');
   perform test.fails(format($f$ select public.grant_paid_period(%L, 'pro', 0, 'x', 'pix', true, null) $f$, ws_k), 'INVALID_GRANT');
   perform test.fails(format($f$ select public.grant_paid_period(%L, 'pro', 30, 'x', 'boleto', true, null) $f$, ws_k), 'INVALID_GRANT');

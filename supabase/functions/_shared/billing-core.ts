@@ -101,6 +101,9 @@ export function decideCardReconcile(input: {
   if (toCents(pre.auto_recurring?.transaction_amount) !== price.price_cents) return ignore('amount_mismatch');
   if (!existing) return ignore('subscription_missing');
 
+  // Se o período vigente foi pago por Pix, cancelamentos/pausas de assinaturas de cartão antigas não mexem no estado.
+  if (existing.billing_mode === 'pix' && pre.status !== 'authorized') return ignore('current_is_pix');
+
   const isCurrent = existing.provider_subscription_id === pre.id;
   const plan = checkout.plan_id;
   const accessEnd = existing.access_until ? new Date(existing.access_until) : null;

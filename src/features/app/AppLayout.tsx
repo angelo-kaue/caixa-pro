@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, FileText, LayoutDashboard, List, Target } from 'lucide-react';
+import { BarChart3, FileText, LayoutDashboard, List, Target, UserRound } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import clsx from 'clsx';
 import { PLANS } from '@/config/plans';
@@ -49,6 +49,9 @@ export function AppLayout() {
             <span className="hidden max-w-[12rem] truncate text-sm text-mute sm:inline">{workspace?.name}</span>
             <Link to="/app/plano" aria-label={`Plano ${PLANS[plan].name}: ver plano e cobrança`}>
               <Badge>{PLANS[plan].name}</Badge>
+            </Link>
+            <Link to="/app/conta" aria-label="Minha conta" className="rounded-md p-2 text-mute hover:bg-surface hover:text-fg">
+              <UserRound size={18} />
             </Link>
             <Button
               variant="ghost"

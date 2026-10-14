@@ -96,6 +96,14 @@ describe('decideCardReconcile', () => {
     expect(decide(pre({ id: 'pre-old', status: 'paused' }), current)).toMatchObject({ reason: 'stale_subscription' });
   });
 
+  it('período pago por Pix não é alterado por cancelamento/pausa de uma assinatura de cartão antiga', () => {
+    const viaPix: ExistingSub = { plan_id: 'pro', status: 'active', billing_mode: 'pix', provider_subscription_id: 'pre-1', access_until: '2026-11-12T00:00:00Z' };
+    expect(decide(pre({ status: 'cancelled' }), viaPix)).toMatchObject({ action: 'ignore', reason: 'current_is_pix' });
+    expect(decide(pre({ status: 'paused' }), viaPix)).toMatchObject({ action: 'ignore', reason: 'current_is_pix' });
+    // mas uma NOVA assinatura de cartão autorizada continua podendo assumir
+    expect(decide(pre({ id: 'pre-new' }), viaPix)).toMatchObject({ action: 'apply', status: 'active', providerSubscriptionId: 'pre-new' });
+  });
+
   it('cancelamento da assinatura vigente mantém o período já pago', () => {
     const current: ExistingSub = { plan_id: 'pro', status: 'active', billing_mode: 'card', provider_subscription_id: 'pre-1', access_until: '2026-10-20T00:00:00Z' };
     const d = decide(pre({ status: 'cancelled' }), current);

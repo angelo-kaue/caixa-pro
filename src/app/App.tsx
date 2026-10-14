@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { GuestOnly, RequireAuth } from '@/features/auth/guards';
 import { AppLayout } from '@/features/app/AppLayout';
+import { AccountPage } from '@/features/account/AccountPage';
 import { BillsPage } from '@/features/bills/BillsPage';
 import { PlanPage } from '@/features/billing/PlanPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
@@ -55,6 +56,7 @@ export function App() {
             <Route path="lancamentos" element={<TransactionsPage />} />
             <Route path="planejamento" element={<PlanningPage />} />
             <Route path="plano" element={<PlanPage />} />
+            <Route path="conta" element={<AccountPage />} />
             <Route path="contas" element={<BillsPage />} />
             <Route
               path="relatorios"
@@ -76,8 +78,8 @@ export function App() {
             }
           />
         )}
-        <Route path="/termos" element={<LegalPage title="Termos de uso" />} />
-        <Route path="/privacidade" element={<LegalPage title="Política de privacidade" />} />
+        <Route path="/termos" element={<LegalPage doc="termos" />} />
+        <Route path="/privacidade" element={<LegalPage doc="privacidade" />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <InstallHint />

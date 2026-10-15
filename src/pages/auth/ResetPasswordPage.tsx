@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Field';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AuthLayout } from '@/features/auth/AuthLayout';
@@ -53,15 +53,14 @@ export function ResetPasswordPage() {
     <AuthLayout title="Nova senha" subtitle="Escolha uma senha nova para a sua conta.">
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {serverError && <Alert tone="error">{serverError}</Alert>}
-        <Input
+        <PasswordInput
           label="Nova senha"
-          type="password"
           autoComplete="new-password"
           hint="Mínimo de 8 caracteres, com letras e números."
           error={errors.password?.message}
           {...register('password')}
         />
-        <Input label="Confirme a nova senha" type="password" autoComplete="new-password" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
+        <PasswordInput label="Confirme a nova senha" autoComplete="new-password" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
         <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
           Salvar senha
         </Button>

@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { AuthLayout } from '@/features/auth/AuthLayout';
 import { signIn } from '@/features/auth/authService';
 import { loginSchema, type LoginValues } from '@/features/auth/schemas';
@@ -46,7 +47,7 @@ export function LoginPage() {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {serverError && <Alert tone="error">{serverError}</Alert>}
         <Input label="E-mail" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} {...register('email')} />
-        <Input label="Senha" type="password" autoComplete="current-password" error={errors.password?.message} {...register('password')} />
+        <PasswordInput label="Senha" autoComplete="current-password" error={errors.password?.message} {...register('password')} />
         <div className="text-right">
           <Link to="/esqueci-senha" className="text-sm text-mute hover:text-fg">
             Esqueci minha senha

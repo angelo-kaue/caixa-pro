@@ -1,4 +1,4 @@
-import { Audiences, Features, HowItWorks, SmartEntry } from '@/features/landing/Sections';
+import { Audiences, Features, HowItWorks, MobileApp, SmartEntry } from '@/features/landing/Sections';
 import { Faq } from '@/features/landing/Faq';
 import { FinalCta } from '@/features/landing/FinalCta';
 import { Footer } from '@/features/landing/Footer';
@@ -14,6 +14,7 @@ export function LandingPage() {
         <Hero />
         <HowItWorks />
         <Features />
+        <MobileApp />
         <Audiences />
         <SmartEntry />
         <Pricing />

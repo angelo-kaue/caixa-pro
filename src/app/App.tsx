@@ -12,6 +12,7 @@ import { InstallHint } from '@/features/pwa/InstallHint';
 import { TransactionsPage } from '@/features/transactions/TransactionsPage';
 import { RequireWorkspace } from '@/features/workspace/guards';
 import { WorkspaceProvider } from '@/features/workspace/WorkspaceProvider';
+import { InstallPage } from '@/pages/InstallPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { LegalPage } from '@/pages/LegalPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -29,6 +30,7 @@ export function App() {
     <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/instalar" element={<InstallPage />} />
         <Route path="/entrar" element={<GuestOnly><LoginPage /></GuestOnly>} />
         <Route path="/cadastro" element={<GuestOnly><SignupPage /></GuestOnly>} />
         <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />

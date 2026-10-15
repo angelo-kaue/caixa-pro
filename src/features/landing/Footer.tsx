@@ -15,6 +15,7 @@ export function Footer() {
           <a href="#funcionalidades" className="hover:text-fg">Funcionalidades</a>
           <a href="#planos" className="hover:text-fg">Planos</a>
           <a href="#faq" className="hover:text-fg">Perguntas frequentes</a>
+          <Link to="/instalar" className="hover:text-fg">Instalar no celular</Link>
           <Link to="/termos" className="hover:text-fg">Termos de uso</Link>
           <Link to="/privacidade" className="hover:text-fg">Política de privacidade</Link>
         </nav>

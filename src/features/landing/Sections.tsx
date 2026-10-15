@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { BarChart3, CalendarClock, Layers, Search, Target, Wallet, type LucideIcon } from 'lucide-react';
 
 const steps = [
@@ -33,6 +34,38 @@ const features: { icon: LucideIcon; title: string; text: string }[] = [
   { icon: Target, title: 'Orçamentos e metas', text: 'Defina limites mensais por categoria e acompanhe o quanto já foi usado.' },
   { icon: CalendarClock, title: 'Contas recorrentes', text: 'Mantenha à vista o que se repete todo mês, inclusive contas a pagar e a receber no negócio.' },
 ];
+
+export function MobileApp() {
+  return (
+    <section className="border-t border-line py-20">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-8 lg:grid-cols-[0.8fr_1.2fr]">
+        <div>
+          <h2 className="text-h1">Leve o CaixaPro no bolso</h2>
+          <p className="mt-4 max-w-md text-mute">
+            Adicione o CaixaPro à tela inicial do celular e use como um aplicativo: abre em um toque e em tela cheia. Não precisa de loja de aplicativos.
+          </p>
+          <Link to="/instalar" className="mt-6 inline-block text-sm font-semibold text-brand hover:underline">
+            Ver o passo a passo
+          </Link>
+        </div>
+        <dl className="grid gap-8 sm:grid-cols-2">
+          <div>
+            <dt className="font-semibold">No iPhone</dt>
+            <dd className="mt-1.5 text-sm leading-relaxed text-mute">
+              Abra no Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold">No Android</dt>
+            <dd className="mt-1.5 text-sm leading-relaxed text-mute">
+              No Chrome, toque nos três pontinhos e escolha Instalar app (ou Adicionar à tela inicial).
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  );
+}
 
 export function Features() {
   return (

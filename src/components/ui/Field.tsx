@@ -1,4 +1,4 @@
-import { forwardRef, useId, type InputHTMLAttributes, type SelectHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
 import clsx from 'clsx';
 
 const control =
@@ -10,10 +10,10 @@ interface FieldShellProps {
   error?: string;
 }
 
-type InputProps = InputHTMLAttributes<HTMLInputElement> & FieldShellProps;
+export type InputProps = InputHTMLAttributes<HTMLInputElement> & FieldShellProps & { trailing?: ReactNode };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, hint, error, className, id, ...rest },
+  { label, hint, error, className, id, trailing, ...rest },
   ref,
 ) {
   const auto = useId();
@@ -24,14 +24,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <label htmlFor={inputId} className="block text-sm font-medium text-fg">
         {label}
       </label>
-      <input
-        ref={ref}
-        id={inputId}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error || hint ? descId : undefined}
-        className={clsx(control, 'h-10', error ? 'border-expense' : 'border-line', className)}
-        {...rest}
-      />
+      <div className="relative">
+        <input
+          ref={ref}
+          id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || hint ? descId : undefined}
+          className={clsx(control, 'h-10', trailing && 'pr-11', error ? 'border-expense' : 'border-line', className)}
+          {...rest}
+        />
+        {trailing && <div className="absolute inset-y-0 right-0 flex items-center pr-1">{trailing}</div>}
+      </div>
       {(error || hint) && (
         <p id={descId} role={error ? 'alert' : undefined} className={clsx('text-xs', error ? 'text-expense' : 'text-faint')}>
           {error ?? hint}

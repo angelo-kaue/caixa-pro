@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { AuthLayout } from '@/features/auth/AuthLayout';
 import { signUp } from '@/features/auth/authService';
 import { signupSchema, type SignupValues } from '@/features/auth/schemas';
@@ -57,15 +58,14 @@ export function SignupPage() {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {serverError && <Alert tone="error">{serverError}</Alert>}
         <Input label="E-mail" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} {...register('email')} />
-        <Input
+        <PasswordInput
           label="Senha"
-          type="password"
           autoComplete="new-password"
           hint="Mínimo de 8 caracteres, com letras e números."
           error={errors.password?.message}
           {...register('password')}
         />
-        <Input label="Confirme a senha" type="password" autoComplete="new-password" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
+        <PasswordInput label="Confirme a senha" autoComplete="new-password" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
         <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
           Criar conta
         </Button>

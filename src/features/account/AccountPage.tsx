@@ -56,7 +56,13 @@ export function AccountPage() {
         </p>
       </div>
 
-      <section aria-labelledby="export-title">
+      <section aria-labelledby="install-title">
+        <h2 id="install-title" className="text-h3">Instalar no celular</h2>
+        <p className="mt-1.5 text-sm text-mute">Adicione o CaixaPro à tela inicial para abrir em tela cheia, como um app.</p>
+        <Link to="/instalar" className="mt-3 inline-block text-sm font-semibold text-brand hover:underline">Ver o passo a passo</Link>
+      </section>
+
+      <section aria-labelledby="export-title" className="border-t border-line pt-8">
         <h2 id="export-title" className="text-h3">Baixar meus dados</h2>
         <p className="mt-1.5 text-sm text-mute">
           Um arquivo JSON com tudo o que o CaixaPro guarda sobre você: lançamentos, categorias, orçamentos, metas, recorrências, contas e assinatura.

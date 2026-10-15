@@ -222,6 +222,72 @@ for (const vp of ['mobile', 'desktop']) {
   }
 }
 
+// ---------- instalação, senha com olhinho e aviso por aparelho ----------
+for (const vp of ['mobile', 'desktop']) {
+  await visit(`instalar-${vp}`, vp, null, '/instalar', { expectText: ['Use o CaixaPro como um app', 'No iPhone ou iPad', 'Adicionar à Tela de Início', 'No Android', 'Instalar app'] });
+}
+{
+  const page = await open('mobile', null);
+  try {
+    await page.goto(BASE + '/cadastro', { waitUntil: 'networkidle0' });
+    const sel = 'input[autocomplete="new-password"]';
+    await page.type(sel, 'minhasenha1');
+    const before = await page.$eval(sel, (i) => i.type);
+    await page.click('button[aria-label="Mostrar senha"]');
+    const shown = await page.$eval(sel, (i) => i.type);
+    const label = await page.$eval('button[aria-pressed="true"]', (b) => b.getAttribute('aria-label'));
+    await page.click('button[aria-pressed="true"]');
+    const hidden = await page.$eval(sel, (i) => i.type);
+    if (before !== 'password' || shown !== 'text' || label !== 'Ocultar senha' || hidden !== 'password') note('FALHA', 'senha-olhinho', `tipos: ${before} -> ${shown} -> ${hidden}, rótulo: ${label}`);
+    const submitted = await page.evaluate(() => document.body.innerText.includes('Confira seu e-mail'));
+    if (submitted) note('FALHA', 'senha-olhinho', 'o botão do olhinho enviou o formulário');
+    await page.screenshot({ path: `${OUT}/senha-olhinho.png` });
+  } catch (e) {
+    note('FALHA', 'senha-olhinho', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+for (const [name, ua, waitMs, expected] of [
+  ['aviso-iphone-safari', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', 3600, ['Compartilhar', 'Adicionar à Tela de Início', 'Adicionar']],
+  ['aviso-iphone-instagram', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/21A329 Instagram 300.0.0.0', 3600, ['Safari']],
+  ['aviso-android', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36', 6800, ['Instalar']],
+]) {
+  const page = await open('mobile', null);
+  try {
+    await page.setUserAgent(ua);
+    await page.goto(BASE + '/', { waitUntil: 'networkidle0' });
+    await new Promise((r) => setTimeout(r, waitMs));
+    const region = await page.$eval('[aria-label="Instalar o CaixaPro"]', (e) => e.innerText).catch(() => '');
+    if (!region) note('FALHA', name, 'o aviso de instalação não apareceu');
+    for (const t of expected) if (region && !region.includes(t)) note('FALHA', name, `aviso sem o texto: "${t}"`);
+    await page.screenshot({ path: `${OUT}/${name}.png` });
+    // dispensar: não deve voltar
+    if (region) {
+      await page.click('button[aria-label^="Dispensar"]');
+      await page.reload({ waitUntil: 'networkidle0' });
+      await new Promise((r) => setTimeout(r, waitMs));
+      const again = await page.$('[aria-label="Instalar o CaixaPro"]');
+      if (again) note('FALHA', name, 'o aviso voltou depois de dispensado');
+    }
+  } catch (e) {
+    note('FALHA', name, e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+// desktop não mostra o aviso
+{
+  const page = await open('desktop', null);
+  try {
+    await page.goto(BASE + '/', { waitUntil: 'networkidle0' });
+    await new Promise((r) => setTimeout(r, 3600));
+    if (await page.$('[aria-label="Instalar o CaixaPro"]')) note('FALHA', 'aviso-desktop', 'o aviso não deveria aparecer no computador');
+  } finally {
+    await page.__browser.close();
+  }
+}
+
 const order = { FALHA: 0, ERRO: 1, A11Y: 2, INFO: 3 };
 findings.sort((a, b) => order[a.level] - order[b.level]);
 console.log(`\n=== ${findings.filter((f) => f.level !== 'INFO').length} achados ===`);

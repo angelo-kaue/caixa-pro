@@ -34,6 +34,12 @@ describe('LandingPage', () => {
     }
   });
 
+  it('divulga a instalação no celular (landing, FAQ e rodapé)', () => {
+    expect(html).toContain('Leve o CaixaPro no bolso');
+    expect(html).toContain('href="/instalar"');
+    expect(html).toContain('Posso usar no celular como um aplicativo?');
+  });
+
   it('inclui links legais no rodapé', () => {
     expect(html).toContain('href="/termos"');
     expect(html).toContain('href="/privacidade"');

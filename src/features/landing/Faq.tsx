@@ -22,6 +22,10 @@ const items = [
     a: 'Cada conta acessa apenas os dados do seu próprio espaço de trabalho, e essa regra é aplicada no banco de dados, não só na interface.',
   },
   {
+    q: 'Posso usar no celular como um aplicativo?',
+    a: 'Sim. O CaixaPro funciona no navegador do celular e pode ser adicionado à tela inicial: no iPhone, pelo Safari (Compartilhar, Adicionar à Tela de Início); no Android, pelo Chrome (três pontinhos, Instalar app). Ele abre em tela cheia, mas não é baixado de uma loja de aplicativos.',
+  },
+  {
     q: 'Preciso de cartão de crédito para usar o Free?',
     a: 'Não. O cadastro pede apenas e-mail e senha.',
   },

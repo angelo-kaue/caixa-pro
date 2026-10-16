@@ -2,6 +2,8 @@
 //   /rest/v1/*  -> PostgREST (RLS de verdade)
 //   /auth/v1/*  -> respostas simples (o teste cria o JWT por conta própria)
 //   /functions/v1/* -> 404 (Edge Functions não rodam aqui)
+import { createHmac } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
 
 const PORT = Number(process.env.FAKE_SUPABASE_PORT ?? 54321);
@@ -13,6 +15,17 @@ const cors = {
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD',
   'Access-Control-Expose-Headers': 'content-range, content-type',
 };
+
+const used = new Set();
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+function sessionFor(uid) {
+  const secret = process.env.E2E_JWT_SECRET ?? 'segredo-de-teste-com-mais-de-32-caracteres!!';
+  const now = Math.floor(Date.now() / 1000);
+  const head = b64({ alg: 'HS256', typ: 'JWT' });
+  const body = b64({ sub: uid, role: 'authenticated', aud: 'authenticated', email: `${uid}@teste.local`, exp: now + 7200 });
+  const sig = createHmac('sha256', secret).update(`${head}.${body}`).digest('base64url');
+  return { access_token: `${head}.${body}.${sig}`, token_type: 'bearer', expires_in: 7200, refresh_token: 'x', user: { id: uid, aud: 'authenticated', role: 'authenticated', email: `${uid}@teste.local`, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } };
+}
 
 function userFromJwt(auth) {
   try {
@@ -44,6 +57,21 @@ http
         res.end('upstream error');
       });
       return req.pipe(upstream);
+    }
+
+    // Simula o link de e-mail de uso único: tokens "hash-valido-*" funcionam UMA vez; qualquer outro (ou reuso) expira.
+    if (url.pathname === '/auth/v1/verify' && req.method === 'POST') {
+      let raw = '';
+      req.on('data', (c) => (raw += c));
+      req.on('end', () => {
+        const { token_hash: th } = JSON.parse(raw || '{}');
+        const ok = typeof th === 'string' && th.startsWith('hash-valido-') && !used.has(th);
+        if (ok) used.add(th);
+        const uid = JSON.parse(readFileSync('/tmp/e2e-users.json', 'utf8')).free;
+        res.writeHead(ok ? 200 : 403, { ...cors, 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(ok ? sessionFor(uid) : { code: 403, error_code: 'otp_expired', msg: 'Email link is invalid or has expired' }));
+      });
+      return;
     }
 
     if (url.pathname === '/auth/v1/user') {

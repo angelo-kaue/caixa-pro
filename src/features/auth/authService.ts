@@ -33,6 +33,12 @@ export async function updatePassword(password: string): Promise<AuthResult> {
   return { error: error ? mapAuthError(error) : null };
 }
 
+/** Confirma o token de uso único (recuperação de senha ou confirmação de e-mail). Cria a sessão se der certo. */
+export async function verifyEmailToken(tokenHash: string, type: 'recovery' | 'email' | 'signup'): Promise<AuthResult> {
+  const { error } = await getSupabase().auth.verifyOtp({ token_hash: tokenHash, type: type === 'signup' ? 'email' : type });
+  return { error: error ? mapAuthError(error) : null };
+}
+
 export async function signOut(): Promise<void> {
   await getSupabase().auth.signOut();
 }

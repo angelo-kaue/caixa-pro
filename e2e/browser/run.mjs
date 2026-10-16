@@ -288,6 +288,64 @@ for (const [name, ua, waitMs, expected] of [
   }
 }
 
+// ---------- links de e-mail de uso único (recuperação de senha e confirmação de cadastro) ----------
+{
+  const page = await open('mobile', null);
+  let verifyCalls = 0;
+  page.on('request', (r) => { if (r.url().includes('/auth/v1/verify')) verifyCalls += 1; });
+  try {
+    await page.goto(BASE + '/redefinir-senha?token_hash=hash-valido-0001&type=recovery', { waitUntil: 'networkidle0' });
+    await new Promise((r) => setTimeout(r, 800));
+    if (verifyCalls !== 0) note('FALHA', 'link-recuperacao', 'o token foi gasto só de abrir a página (leitores de e-mail fariam o mesmo)');
+    const txt = await page.evaluate(() => document.body.innerText);
+    if (!txt.includes('Continuar')) note('FALHA', 'link-recuperacao', 'não mostrou o botão Continuar');
+    await page.screenshot({ path: `${OUT}/link-recuperacao-1.png` });
+    await page.click('main button');
+    await page.waitForSelector('input[autocomplete="new-password"]', { timeout: 8000 });
+    if (page.url().includes('token_hash')) note('FALHA', 'link-recuperacao', 'o token continuou no endereço depois de usado');
+    const [a, b] = await page.$$('input[autocomplete="new-password"]');
+    await a.type('novasenha1');
+    await b.type('novasenha1');
+    await page.click('button[type="submit"]');
+    await page.waitForFunction(() => location.pathname === '/app' && document.body.innerText.includes('Resumo'), { timeout: 10000 });
+    await page.screenshot({ path: `${OUT}/link-recuperacao-2.png` });
+  } catch (e) {
+    note('FALHA', 'link-recuperacao', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+{
+  const page = await open('mobile', null);
+  try {
+    // mesmo token de novo: já foi usado, tem que expirar com mensagem clara
+    await page.goto(BASE + '/redefinir-senha?token_hash=hash-valido-0001&type=recovery', { waitUntil: 'networkidle0' });
+    await page.click('main button');
+    await page.waitForFunction(() => document.body.innerText.includes('expirou'), { timeout: 8000 });
+    const hasLink = await page.evaluate(() => document.body.innerText.includes('Solicitar novo link'));
+    if (!hasLink) note('FALHA', 'link-reutilizado', 'sem o atalho para pedir novo link');
+    await page.screenshot({ path: `${OUT}/link-reutilizado.png` });
+  } catch (e) {
+    note('FALHA', 'link-reutilizado', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+{
+  const page = await open('mobile', null);
+  try {
+    await page.goto(BASE + '/auth/callback?token_hash=hash-valido-0002&type=email', { waitUntil: 'networkidle0' });
+    const txt = await page.evaluate(() => document.body.innerText);
+    if (!txt.includes('Confirmar meu e-mail')) note('FALHA', 'link-confirmacao', 'não mostrou o botão de confirmar');
+    await page.click('main button');
+    await page.waitForFunction(() => location.pathname === '/app', { timeout: 10000 });
+  } catch (e) {
+    note('FALHA', 'link-confirmacao', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+
 const order = { FALHA: 0, ERRO: 1, A11Y: 2, INFO: 3 };
 findings.sort((a, b) => order[a.level] - order[b.level]);
 console.log(`\n=== ${findings.filter((f) => f.level !== 'INFO').length} achados ===`);

@@ -36,11 +36,11 @@ export function ConfirmDialog({ open, title, children, confirmLabel = 'Excluir',
       <div className="space-y-4">
         {error && <Alert tone="error">{error}</Alert>}
         <div className="text-sm text-mute">{children}</div>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="ghost" className="w-full sm:w-auto" onClick={onClose}>
             Cancelar
           </Button>
-          <Button variant={danger ? 'danger' : 'primary'} loading={busy} onClick={() => void run()}>
+          <Button variant={danger ? 'danger' : 'primary'} className="w-full sm:w-auto" loading={busy} onClick={() => void run()}>
             {confirmLabel}
           </Button>
         </div>

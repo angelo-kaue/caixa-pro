@@ -74,11 +74,12 @@ Faça isto **por último**, com tudo acima funcionando.
    npx supabase functions deploy delete-account
    npx supabase functions deploy mp-webhook --no-verify-jwt
    ```
-5. **Teste com dinheiro de verdade, valor baixo.** No SQL Editor:
+5. **Teste com dinheiro de verdade, valor baixo.** No SQL Editor, tente primeiro R$ 1,00:
    ```sql
-   update plans set price_cents = 500 where id = 'pro';
+   update plans set price_cents = 100 where id = 'pro';
    ```
-   Faça **uma** compra no cartão e **uma** no Pix, com um cartão e uma conta do Mercado Pago **diferentes** da conta vendedora (o Mercado Pago não deixa a mesma conta pagar a si mesma). Confirme que o plano muda para Pro.
+   Se o Mercado Pago recusar o valor (assinatura e Pix podem ter mínimos diferentes), use R$ 5,00 (`price_cents = 500`).
+   Faça **uma** compra no cartão e **uma** no Pix, pagando com um cartão e uma conta **de outra pessoa** (familiar ou amigo): o Mercado Pago não deixa a mesma pessoa/conta pagar a si mesma. Confirme que o plano muda para Pro.
 6. **Volte o preço (não esqueça):**
    ```sql
    update plans set price_cents = 1990 where id = 'pro';

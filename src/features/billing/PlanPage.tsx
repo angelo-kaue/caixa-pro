@@ -10,6 +10,7 @@ import { PLANS, PLAN_ORDER, type PlanId } from '@/config/plans';
 import { formatDateBR, toISODate } from '@/domain/dates';
 import { formatCentsToBRL } from '@/domain/money';
 import { cancelSubscription, createCheckout, syncBilling, type SyncOutcome } from '@/services/billingService';
+import { describePurchase } from './purchaseCopy';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
 const RETURN_PARAMS = ['preapproval_id', 'payment_id', 'collection_id', 'collection_status', 'status'];
@@ -36,6 +37,7 @@ export function PlanPage() {
   const [error, setError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [pendingMode, setPendingMode] = useState<'card' | 'pix' | null>(null);
   const [diagnostic, setDiagnostic] = useState<SyncOutcome[] | null>(null);
   const planRef = useRef<PlanId>(plan);
   planRef.current = plan;
@@ -101,6 +103,12 @@ export function PlanPage() {
       setBusy(null);
     }
   }
+
+  const purchaseCtx = { plan, status: subscription?.status ?? null, billingMode: subscription?.billing_mode ?? null, accessUntil: subscription?.access_until ?? null };
+  const cardCopy = describePurchase('card', purchaseCtx);
+  const pixCopy = describePurchase('pix', purchaseCtx);
+  // Com um plano pago em vigor, avisa o que vai acontecer antes de seguir para o pagamento.
+  const startPurchase = (mode: 'card' | 'pix') => ((mode === 'card' ? cardCopy : pixCopy).confirm ? setPendingMode(mode) : void buy(mode));
 
   const status = subscription ? describeStatus(subscription.status, subscription.cancel_at_period_end) : null;
   const until = subscription?.access_until ? formatDateBR(toISODate(new Date(subscription.access_until))) : null;
@@ -171,7 +179,6 @@ export function PlanPage() {
             const p = PLANS[id];
             const sellable = SELLABLE_PLANS.includes(id);
             const current = plan === id;
-            const cardActive = current && subscription?.billing_mode === 'card' && subscription.status === 'active';
             return (
               <article key={id} className={`flex flex-col rounded-lg border p-5 ${current ? 'border-brand/60 bg-surface' : 'border-line'}`}>
                 <div className="flex items-center justify-between">
@@ -195,11 +202,11 @@ export function PlanPage() {
                 {id === 'enterprise' && <p className="mt-4 text-xs text-faint">Em desenvolvimento: ainda não está disponível para contratação.</p>}
                 {sellable && BILLING_ENABLED && (
                   <div className="mt-5 space-y-2">
-                    <Button className="w-full" loading={busy === 'card'} disabled={busy !== null || cardActive} onClick={() => void buy('card')}>
-                      {cardActive ? 'Assinatura ativa' : 'Assinar no cartão (mensal)'}
+                    <Button className="w-full" loading={busy === 'card'} disabled={busy !== null || (current && cardCopy.disabled)} onClick={() => startPurchase('card')}>
+                      {current ? cardCopy.label : 'Assinar no cartão (mensal)'}
                     </Button>
-                    <Button variant="secondary" className="w-full" loading={busy === 'pix'} disabled={busy !== null} onClick={() => void buy('pix')}>
-                      Pagar {PIX_PERIOD_DAYS} dias com Pix
+                    <Button variant="secondary" className="w-full" loading={busy === 'pix'} disabled={busy !== null} onClick={() => startPurchase('pix')}>
+                      {current ? pixCopy.label : `Pagar ${PIX_PERIOD_DAYS} dias com Pix`}
                     </Button>
                     <p className="text-xs text-faint">Cartão renova sozinho e você pode cancelar quando quiser. Pix libera {PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.</p>
                   </div>
@@ -213,6 +220,22 @@ export function PlanPage() {
           <Link to="/termos" className="underline hover:text-fg">Termos de uso</Link>.
         </p>
       </section>
+
+      <ConfirmDialog
+        open={pendingMode !== null}
+        title="Antes de continuar"
+        confirmLabel="Continuar para o pagamento"
+        danger={false}
+        onClose={() => setPendingMode(null)}
+        onConfirm={async () => {
+          const mode = pendingMode;
+          setPendingMode(null);
+          if (mode) await buy(mode);
+          return null;
+        }}
+      >
+        {pendingMode === 'card' ? cardCopy.confirm : pixCopy.confirm}
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={cancelOpen}

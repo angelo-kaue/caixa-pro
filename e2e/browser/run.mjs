@@ -110,7 +110,7 @@ for (const vp of ['mobile', 'desktop']) {
   await visit(`pro-resumo-${vp}`, vp, users.pro, '/app', { expectText: ['Fluxo de caixa', 'Saldo projetado', 'Saldo disponível registrado'] });
   await visit(`pro-contas-${vp}`, vp, users.pro, '/app/contas', { expectText: ['Contas a pagar e a receber', 'Fornecedor ABC', 'Atrasada'] });
   await visit(`pro-relatorios-${vp}`, vp, users.pro, '/app/relatorios', { expectText: ['Comparação com o mês anterior', 'Últimos 6 meses', 'Exportar'] });
-  await visit(`pro-plano-${vp}`, vp, users.pro, '/app/plano', { expectText: ['Plano atual', 'liberado manualmente'] });
+  await visit(`pro-plano-${vp}`, vp, users.pro, '/app/plano', { expectText: ['Plano atual', 'Pix: pagamento avulso', 'Renovar com Pix', 'Passar para o cartão'] });
 }
 
 // ---------- fluxos ----------
@@ -341,6 +341,34 @@ for (const [name, ua, waitMs, expected] of [
     await page.waitForFunction(() => location.pathname === '/app', { timeout: 10000 });
   } catch (e) {
     note('FALHA', 'link-confirmacao', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+
+// ---------- plano pago por Pix: renovar avisa o que acontece ----------
+{
+  const page = await open('mobile', users.pro);
+  try {
+    await page.goto(BASE + '/app/plano', { waitUntil: 'networkidle0' });
+    const clickByText = async (text) => {
+      const h = await page.evaluateHandle((t) => [...document.querySelectorAll('button')].find((b) => b.innerText.includes(t)) ?? null, text);
+      const el = h.asElement();
+      if (!el) throw new Error(`botão não encontrado: ${text}`);
+      await el.click();
+    };
+    await clickByText('Renovar com Pix');
+    await page.waitForSelector('dialog[open]', { timeout: 6000 });
+    const dlg = await page.evaluate(() => document.querySelector('dialog[open]').innerText);
+    if (!dlg.includes('soma 30 dias') || !dlg.includes('Continuar para o pagamento')) note('FALHA', 'plano-renovar-pix', `aviso incompleto: ${dlg.slice(0, 120)}`);
+    await page.screenshot({ path: `${OUT}/plano-renovar-pix.png` });
+    await page.keyboard.press('Escape');
+    await clickByText('Passar para o cartão');
+    await page.waitForSelector('dialog[open]', { timeout: 6000 });
+    const dlg2 = await page.evaluate(() => document.querySelector('dialog[open]').innerText);
+    if (!dlg2.includes('pago por Pix')) note('FALHA', 'plano-passar-cartao', 'aviso sem a explicação do Pix');
+  } catch (e) {
+    note('FALHA', 'plano-pix-avisos', e.message);
   } finally {
     await page.__browser.close();
   }

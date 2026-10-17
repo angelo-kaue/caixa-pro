@@ -68,6 +68,7 @@ for (let m = 0; m < 6; m++) {
   proTxs.push(['expense', 40000 + m * 3000, 'Anúncios', 'Marketing', m * 30 + 9]);
 }
 const proWs = await seedWorkspace(pro, 'business', 'Loja da Maria', 500000, proTxs, 'pro');
+await client.query(`update public.subscriptions set billing_mode = 'pix', access_until = now() + interval '20 days' where workspace_id = $1`, [proWs]);
 await client.query(
   `insert into public.bills (workspace_id, kind, description, amount_cents, due_on)
    values ($1, 'expense', 'Fornecedor ABC', 320000, current_date - 3), ($1, 'income', 'Cliente Silva', 150000, current_date + 5), ($1, 'expense', 'Aluguel da loja', 180000, current_date + 10)`,

@@ -111,6 +111,11 @@ Com `MP_SANDBOX=true`, se o Mercado Pago recusar, a tela mostra o **detalhe téc
 | "Ops, ocorreu um erro" na página do Mercado Pago | pagando logado com a conta real, ou com a mesma conta vendedora | janela anônima + conta compradora de teste |
 | `401` / `invalid_token` | token errado, de outra conta ou vencido | copie o token de novo (conta vendedora de teste) |
 
+## Quem paga no cartão (e-mail do pagador)
+A assinatura do Mercado Pago é ligada a um e-mail, e quem paga precisa entrar com a conta Mercado Pago desse e-mail. Por isso a tela
+de plano pergunta o **e-mail da conta do Mercado Pago** antes de ir ao cartão (o padrão é o e-mail do CaixaPro). Se for diferente, o
+Mercado Pago responde "Ops, ocorreu um erro". Para testar com outra pessoa: informe o e-mail da conta dela e envie o link gerado.
+
 ## CPF (sem CNPJ)
 O Mercado Pago permite abrir conta com CPF e, segundo o próprio material do Mercado Pago, receber por Pix e cobranças
 online. **Não consegui confirmar** em documentação oficial se as credenciais de produção da API de Assinaturas funcionam

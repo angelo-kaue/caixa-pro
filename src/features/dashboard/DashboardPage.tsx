@@ -7,10 +7,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Field';
 import { Money } from '@/components/ui/Money';
 import { PLANS, hasFeature } from '@/config/plans';
-import { formatDateBR, formatMonthYearBR, monthBounds, shiftMonth, todayISO } from '@/domain/dates';
+import { formatMonthYearBR, formatRelativeDate, monthBounds, shiftMonth, todayISO } from '@/domain/dates';
+import { budgetProgress } from '@/domain/progress';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { listBudgets } from '@/services/planningService';
 import { mapDbError } from '@/services/dbErrors';
 import { getSummary, listTransactions } from '@/services/transactionService';
-import type { Summary, Transaction } from '@/types/db';
+import type { Budget, Summary, Transaction } from '@/types/db';
 import { Loading } from '@/features/workspace/guards';
 import { BillsGlance } from './BillsGlance';
 import { InsightsCard } from './InsightsCard';
@@ -32,6 +35,7 @@ export function DashboardPage() {
   const [customTo, setCustomTo] = useState('');
   const [summary, setSummary] = useState<Summary | null>(null);
   const [recent, setRecent] = useState<Transaction[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,11 +59,13 @@ export function DashboardPage() {
     Promise.all([
       getSummary(wsId, range.from, range.to),
       listTransactions(wsId, { search: '', from: null, to: null, categoryId: null, kind: null, sort: 'date_desc', page: 1, pageSize: 5 }),
+      listBudgets(wsId).catch(() => [] as Budget[]),
     ])
-      .then(([s, r]) => {
+      .then(([s, r, b]) => {
         if (!active) return;
         setSummary(s);
         setRecent(r.rows);
+        setBudgets(b);
         setLoading(false);
       })
       .catch((e) => {
@@ -91,7 +97,7 @@ export function DashboardPage() {
     <div className="space-y-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-h1">Resumo</h1>
+          <h1 className="page-title">Resumo</h1>
           <p className="mt-1 text-sm text-mute">
             {period === 'month' && formatMonthYearBR(today)}
             {period === 'prev' && formatMonthYearBR(shiftMonth(today, -1))}
@@ -136,24 +142,26 @@ export function DashboardPage() {
               </p>
               <p className="mt-2 max-w-xl text-xs text-faint">Saldo inicial somado aos lançamentos que você registrou. Não é o saldo da sua conta bancária.</p>
 
-              <dl className="mt-8 grid grid-cols-1 divide-y divide-line border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-                <div className="py-4 sm:pr-6">
-                  <dt className="text-sm text-mute">Receitas</dt>
-                  <dd className="mt-1 text-xl"><Money cents={summary.income_cents} tone="income" /></dd>
+              <dl className="mt-6 grid grid-cols-3 divide-x divide-line border-y border-line sm:mt-8">
+                <div className="min-w-0 py-3 pr-2 sm:py-4 sm:pr-6">
+                  <dt className="text-xs text-mute sm:text-sm">Receitas</dt>
+                  <dd className="mt-1 whitespace-nowrap text-[0.85rem] sm:text-xl"><Money cents={summary.income_cents} tone="income" /></dd>
                 </div>
-                <div className="py-4 sm:px-6">
-                  <dt className="text-sm text-mute">{business ? 'Despesas operacionais' : 'Despesas'}</dt>
-                  <dd className="mt-1 text-xl"><Money cents={summary.expense_cents} tone="expense" /></dd>
+                <div className="min-w-0 px-2 py-3 sm:px-6 sm:py-4">
+                  <dt className="text-xs text-mute sm:text-sm">{business ? 'Despesas oper.' : 'Despesas'}</dt>
+                  <dd className="mt-1 whitespace-nowrap text-[0.85rem] sm:text-xl"><Money cents={summary.expense_cents} tone="expense" /></dd>
                 </div>
-                <div className="py-4 sm:pl-6">
-                  <dt className="text-sm text-mute">{business ? 'Resultado do período' : 'Resultado'}</dt>
-                  <dd className="mt-1 text-xl"><Money cents={result} tone="auto" /></dd>
+                <div className="min-w-0 py-3 pl-2 sm:py-4 sm:pl-6">
+                  <dt className="text-xs text-mute sm:text-sm">Resultado</dt>
+                  <dd className="mt-1 whitespace-nowrap text-[0.85rem] sm:text-xl"><Money cents={result} tone="auto" /></dd>
                 </div>
               </dl>
             </section>
 
             {business && <BillsGlance balanceCents={summary.balance_cents} />}
             {hasFeature(plan, 'insights') && <InsightsCard />}
+
+            {period === 'month' && hasData && <BudgetsGlance budgets={budgets} summary={summary} nameOf={(id) => categories.find((c) => c.id === id)?.name ?? 'Categoria'} />}
 
             {!hasData ? (
               <div className="rounded-lg border border-line">
@@ -195,7 +203,7 @@ export function DashboardPage() {
                     <li key={t.id} className="flex items-center justify-between gap-4 py-3 text-sm">
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{t.description}</span>
-                        <span className="text-xs text-faint">{categoryName(t.category_id)} · {formatDateBR(t.occurred_on)}</span>
+                        <span className="text-xs text-faint">{categoryName(t.category_id)} · {formatRelativeDate(t.occurred_on, today)}</span>
                       </span>
                       <Money cents={t.kind === 'income' ? t.amount_cents : -t.amount_cents} tone={t.kind} />
                     </li>
@@ -207,5 +215,50 @@ export function DashboardPage() {
         )
       )}
     </div>
+  );
+}
+
+/** Orçamentos do mês no Resumo: os mais próximos do limite primeiro. */
+function BudgetsGlance({ budgets, summary, nameOf }: { budgets: Budget[]; summary: Summary; nameOf: (id: string) => string }) {
+  const spent = new Map(summary.categories.filter((c) => c.kind === 'expense' && c.category_id).map((c) => [c.category_id as string, c.total_cents]));
+  const rows = budgets
+    .filter((b) => b.active)
+    .map((b) => ({ b, p: budgetProgress(spent.get(b.category_id) ?? 0, b.amount_cents), spent: spent.get(b.category_id) ?? 0 }))
+    .sort((x, y) => y.p.pct - x.p.pct)
+    .slice(0, 4);
+
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-mute">
+        Quer controlar os gastos?{' '}
+        <Link to="/app/planejamento" className="font-semibold text-brand hover:underline">
+          Defina um limite mensal para uma categoria
+        </Link>
+        .
+      </p>
+    );
+  }
+  return (
+    <section aria-label="Orçamentos do mês">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-h3">Orçamentos do mês</h2>
+        <Link to="/app/planejamento" className="text-sm font-semibold text-brand hover:underline">
+          Ver todos
+        </Link>
+      </div>
+      <ul className="mt-4 space-y-4">
+        {rows.map(({ b, p, spent: s }) => (
+          <li key={b.id}>
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="font-medium">{nameOf(b.category_id)}</span>
+              <span className={p.state === 'over' ? 'num text-expense' : 'num text-mute'}>
+                <Money cents={s} className={p.state === 'over' ? 'text-expense' : 'text-fg'} /> de <Money cents={b.amount_cents} className="text-mute" /> · {p.pct}%
+              </span>
+            </div>
+            <ProgressBar pct={p.pct} tone={p.state} label={`Uso do orçamento de ${nameOf(b.category_id)}`} className="mt-1.5" />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

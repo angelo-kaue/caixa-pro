@@ -5,6 +5,7 @@ import {
   decideCardReconcile,
   decidePixPayment,
   isSellablePlan,
+  normalizePayerEmail,
   isUuid,
   parseWebhookRequest,
   toCents,
@@ -40,6 +41,20 @@ describe('helpers', () => {
     expect(isUuid(CK)).toBe(true);
     expect(isUuid('nao-e-uuid')).toBe(false);
     expect(isUuid(null)).toBe(false);
+  });
+});
+
+describe('normalizePayerEmail', () => {
+  it('usa o e-mail informado, em minúsculas e sem espaços', () => {
+    expect(normalizePayerEmail('  Maria@Exemplo.COM ', 'padrao@x.com')).toBe('maria@exemplo.com');
+  });
+  it('sem valor, usa o padrão', () => {
+    expect(normalizePayerEmail(undefined, 'padrao@x.com')).toBe('padrao@x.com');
+    expect(normalizePayerEmail('', 'padrao@x.com')).toBe('padrao@x.com');
+    expect(normalizePayerEmail(null, 'padrao@x.com')).toBe('padrao@x.com');
+  });
+  it('recusa e-mails inválidos e tipos errados', () => {
+    for (const v of ['sem-arroba', 'a@b', 'a b@c.com', 'a@@c.com', 123, {}, 'x'.repeat(250) + '@a.com']) expect(normalizePayerEmail(v, 'p@x.com')).toBeNull();
   });
 });
 

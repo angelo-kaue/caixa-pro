@@ -34,8 +34,8 @@ async function failure(error: unknown): Promise<Error> {
   return new Error(detail ? `${base} Detalhe técnico (modo de teste): ${detail}` : base);
 }
 
-export async function createCheckout(plan: 'pro', mode: 'card' | 'pix'): Promise<string> {
-  const { data, error } = await getSupabase().functions.invoke('create-checkout', { body: { plan, mode } });
+export async function createCheckout(plan: 'pro', mode: 'card' | 'pix', payerEmail?: string): Promise<string> {
+  const { data, error } = await getSupabase().functions.invoke('create-checkout', { body: { plan, mode, ...(payerEmail ? { payerEmail } : {}) } });
   if (error) throw await failure(error);
   const url = (data as { url?: unknown } | null)?.url;
   if (typeof url !== 'string' || !url.startsWith('https://')) throw new Error(mapBillingError(null));

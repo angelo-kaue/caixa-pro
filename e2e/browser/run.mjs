@@ -91,10 +91,10 @@ await visit('404-mobile', 'mobile', null, '/nada-aqui', { expectText: 'Página n
 
 // ---------- área logada: usuário Free ----------
 for (const vp of ['mobile', 'desktop']) {
-  await visit(`app-resumo-${vp}`, vp, users.free, '/app', { expectText: ['Resumo', 'Saldo registrado', 'Receitas', 'Últimos lançamentos'] });
+  await visit(`app-resumo-${vp}`, vp, users.free, '/app', { expectText: ['Resumo', 'Saldo registrado', 'Receitas', 'Últimos lançamentos', 'Orçamentos do mês', 'Ontem'] });
   await visit(`app-lancamentos-${vp}`, vp, users.free, '/app/lancamentos', { expectText: ['Lançamentos', 'Mercado', 'Uber'] });
   await visit(`app-planejamento-${vp}`, vp, users.free, '/app/planejamento', { expectText: ['Planejamento', 'Alimentação'] });
-  await visit(`app-plano-${vp}`, vp, users.free, '/app/plano', { expectText: ['Plano e cobrança', 'Free', 'Assinar no cartão'] });
+  await visit(`app-plano-${vp}`, vp, users.free, '/app/plano', { expectText: ['Plano e cobrança', 'Free', 'Assinar no cartão', 'E-mail da sua conta do Mercado Pago'] });
   await visit(`app-relatorios-free-${vp}`, vp, users.free, '/app/relatorios', { expectText: 'fazem parte do plano Pro' });
 }
 await visit('app-plano-retorno-pix', 'mobile', users.free, '/app/plano?payment_id=123456&status=approved', { expectText: 'Estamos confirmando seu pagamento', allowHttp: ['404', '502'] });
@@ -369,6 +369,62 @@ for (const [name, ua, waitMs, expected] of [
     if (!dlg2.includes('pago por Pix')) note('FALHA', 'plano-passar-cartao', 'aviso sem a explicação do Pix');
   } catch (e) {
     note('FALHA', 'plano-pix-avisos', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+
+// ---------- melhorias de usabilidade ----------
+{
+  const page = await open('mobile', users.free);
+  try {
+    await page.goto(BASE + '/app', { waitUntil: 'networkidle0' });
+    const top = await page.evaluate(() => [...document.querySelectorAll('dt')].find((d) => d.innerText.includes('Resultado'))?.getBoundingClientRect().top ?? 99999);
+    if (top > 844 - 80) note('FALHA', 'ui-totais-celular', `o Resultado ainda fica abaixo da primeira tela (top=${Math.round(top)}px)`);
+    await page.screenshot({ path: `${OUT}/ui-resumo-celular.png` });
+
+    // desfazer
+    await page.type('#quick-entry', 'Uber 10');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.body.innerText.includes('Registrado: Uber'), { timeout: 10000 });
+    await page.screenshot({ path: `${OUT}/ui-desfazer.png` });
+    const btn = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === 'Desfazer') ?? null);
+    if (!btn.asElement()) throw new Error('botão Desfazer não apareceu');
+    await btn.asElement().click();
+    await page.waitForFunction(() => document.body.innerText.includes('Lançamento desfeito'), { timeout: 8000 });
+    await page.goto(BASE + '/app/lancamentos', { waitUntil: 'networkidle0' });
+    if ((await page.evaluate(() => document.body.innerText)).includes('R$ 10,00')) note('FALHA', 'ui-desfazer', 'o lançamento continuou no histórico depois de desfeito');
+
+    // botão "+" depois de rolar
+    await page.evaluate(() => window.scrollTo(0, 700));
+    await new Promise((r) => setTimeout(r, 400));
+    const fab = await page.$('button[aria-label="Novo lançamento"]');
+    if (!fab) throw new Error('botão + não apareceu depois de rolar');
+    await page.screenshot({ path: `${OUT}/ui-fab.png` });
+    await fab.click();
+    await page.waitForFunction(() => window.scrollY < 60, { timeout: 5000 });
+    const focused = await page.evaluate(() => document.activeElement?.id === 'quick-entry');
+    if (!focused) note('FALHA', 'ui-fab', 'o campo de lançamento não recebeu o foco');
+  } catch (e) {
+    note('FALHA', 'ui-melhorias-celular', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+{
+  const page = await open('mobile', users.novo);
+  try {
+    await page.goto(BASE + '/app', { waitUntil: 'networkidle0' });
+    await new Promise((r) => setTimeout(r, 700));
+    const txt = await page.evaluate(() => document.body.innerText);
+    if (!txt.includes('Experimente:')) note('FALHA', 'ui-exemplos', 'sem os exemplos para quem está começando');
+    const chip = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === '50 Uber') ?? null);
+    await chip.asElement().click();
+    const val = await page.$eval('#quick-entry', (i) => i.value);
+    if (val !== '50 Uber') note('FALHA', 'ui-exemplos', `o exemplo não preencheu o campo (valor: "${val}")`);
+    await page.screenshot({ path: `${OUT}/ui-exemplos.png` });
+  } catch (e) {
+    note('FALHA', 'ui-exemplos', e.message);
   } finally {
     await page.__browser.close();
   }

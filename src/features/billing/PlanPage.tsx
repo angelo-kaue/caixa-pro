@@ -4,6 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Field';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { BILLING_ENABLED, PIX_PERIOD_DAYS, SELLABLE_PLANS } from '@/config/billing';
 import { PLANS, PLAN_ORDER, type PlanId } from '@/config/plans';
@@ -38,6 +40,9 @@ export function PlanPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [checking, setChecking] = useState(false);
   const [pendingMode, setPendingMode] = useState<'card' | 'pix' | null>(null);
+  const { user } = useAuth();
+  const [mpEmail, setMpEmail] = useState(user?.email ?? '');
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [diagnostic, setDiagnostic] = useState<SyncOutcome[] | null>(null);
   const planRef = useRef<PlanId>(plan);
   planRef.current = plan;
@@ -97,7 +102,7 @@ export function PlanPage() {
     setBusy(mode);
     setError(null);
     try {
-      window.location.assign(await createCheckout('pro', mode));
+      window.location.assign(await createCheckout('pro', mode, mode === 'card' ? mpEmail.trim() : undefined));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível iniciar a contratação.');
       setBusy(null);
@@ -108,7 +113,15 @@ export function PlanPage() {
   const cardCopy = describePurchase('card', purchaseCtx);
   const pixCopy = describePurchase('pix', purchaseCtx);
   // Com um plano pago em vigor, avisa o que vai acontecer antes de seguir para o pagamento.
-  const startPurchase = (mode: 'card' | 'pix') => ((mode === 'card' ? cardCopy : pixCopy).confirm ? setPendingMode(mode) : void buy(mode));
+  const startPurchase = (mode: 'card' | 'pix') => {
+    if (mode === 'card' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mpEmail.trim())) {
+      setEmailError('Informe um e-mail válido.');
+      return;
+    }
+    setEmailError(null);
+    startChosen(mode);
+  };
+  const startChosen = (mode: 'card' | 'pix') => ((mode === 'card' ? cardCopy : pixCopy).confirm ? setPendingMode(mode) : void buy(mode));
 
   const status = subscription ? describeStatus(subscription.status, subscription.cancel_at_period_end) : null;
   const until = subscription?.access_until ? formatDateBR(toISODate(new Date(subscription.access_until))) : null;
@@ -117,7 +130,7 @@ export function PlanPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-h1">Plano e cobrança</h1>
+        <h1 className="page-title">Plano e cobrança</h1>
         <p className="mt-1 text-sm text-mute">Espaço: {workspace?.name}</p>
       </div>
 
@@ -202,6 +215,16 @@ export function PlanPage() {
                 {id === 'enterprise' && <p className="mt-4 text-xs text-faint">Em desenvolvimento: ainda não está disponível para contratação.</p>}
                 {sellable && BILLING_ENABLED && (
                   <div className="mt-5 space-y-2">
+                    <Input
+                      label="E-mail da sua conta do Mercado Pago"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={mpEmail}
+                      onChange={(e) => setMpEmail(e.target.value)}
+                      error={emailError ?? undefined}
+                      hint="Usado no pagamento no cartão: precisa ser o e-mail com o qual você entra no Mercado Pago."
+                    />
                     <Button className="w-full" loading={busy === 'card'} disabled={busy !== null || (current && cardCopy.disabled)} onClick={() => startPurchase('card')}>
                       {current ? cardCopy.label : 'Assinar no cartão (mensal)'}
                     </Button>

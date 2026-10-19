@@ -62,8 +62,8 @@ export async function listTransactions(workspaceId: string, f: TxFilters): Promi
   return { rows: (data ?? []) as Transaction[], total: count ?? 0 };
 }
 
-export async function createTransaction(workspaceId: string, input: TxInput, idempotencyKey: string): Promise<void> {
-  const { error } = await getSupabase().from('transactions').insert({
+export async function createTransaction(workspaceId: string, input: TxInput, idempotencyKey: string): Promise<string> {
+  const { data, error } = await getSupabase().from('transactions').insert({
     workspace_id: workspaceId,
     kind: input.kind,
     amount_cents: input.amountCents,
@@ -72,8 +72,9 @@ export async function createTransaction(workspaceId: string, input: TxInput, ide
     occurred_on: input.occurredOn,
     payment_method: input.paymentMethod,
     idempotency_key: idempotencyKey,
-  });
+  }).select('id').single();
   if (error) throw error;
+  return (data as { id: string }).id;
 }
 
 export async function updateTransaction(id: string, input: TxInput): Promise<void> {

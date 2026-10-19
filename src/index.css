@@ -54,6 +54,17 @@
   .table-base tbody tr:hover {
     @apply bg-surface/60;
   }
+  /* Título de página: menor no celular para sobrar espaço ao conteúdo */
+  .page-title {
+    @apply text-[1.75rem] font-bold leading-tight tracking-tight;
+  }
+  @media (min-width: 640px) {
+    .page-title {
+      font-size: 2.25rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+    }
+  }
   .num {
     font-variant-numeric: tabular-nums;
   }

@@ -75,7 +75,7 @@ export default function ReportsPage() {
   if (!allowed) {
     return (
       <div className="space-y-6">
-        <h1 className="text-h1">Relatórios</h1>
+        <h1 className="page-title">Relatórios</h1>
         <UpgradeNotice
           title="Relatórios detalhados fazem parte do plano Pro"
           description="Compare o mês com o anterior, veja a evolução dos últimos 6 meses e exporte seus dados."
@@ -120,7 +120,7 @@ export default function ReportsPage() {
     <div className="space-y-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-h1">Relatórios</h1>
+          <h1 className="page-title">Relatórios</h1>
           <p className="mt-1 text-sm text-mute first-letter:uppercase">{formatMonthYearBR(month)}</p>
         </div>
         <div className="flex items-center gap-2">

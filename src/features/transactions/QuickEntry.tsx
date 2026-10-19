@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { CornerDownLeft, SlidersHorizontal } from 'lucide-react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -8,7 +8,7 @@ import { formatCentsForInput, formatCentsToBRL } from '@/domain/money';
 import { parseQuickEntry, type ParsedEntry } from '@/domain/parser';
 import { newUuid } from '@/lib/uuid';
 import { mapDbError } from '@/services/dbErrors';
-import { createTransaction, hasSimilarTransaction, type TxInput } from '@/services/transactionService';
+import { createTransaction, deleteTransaction, hasSimilarTransaction, type TxInput } from '@/services/transactionService';
 import { saveRule } from '@/services/workspaceService';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 import { Modal } from '@/components/ui/Modal';
@@ -22,6 +22,8 @@ interface Draft {
   title: string;
 }
 
+const EXAMPLES = ['50 Uber', 'Mercado 186,40', 'Recebi 2500 de salário'];
+
 const emptyValues = (): FormValues => ({
   amountText: '',
   kind: 'expense',
@@ -34,7 +36,8 @@ const emptyValues = (): FormValues => ({
 export function QuickEntry() {
   const { workspace, userRules, usage, findCategory, bump } = useWorkspace();
   const [text, setText] = useState('');
-  const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string; undoId?: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   // Chave de idempotência da tentativa atual: impede gravar duas vezes em cliques repetidos ou reenvios.
@@ -44,6 +47,13 @@ export function QuickEntry() {
     () => (text.trim() ? parseQuickEntry(text, { today: todayISO(), userRules }) : null),
     [text, userRules],
   );
+
+  // A confirmação some sozinha (com tempo para desfazer); erros ficam até a próxima ação.
+  useEffect(() => {
+    if (!message || message.tone === 'error') return;
+    const t = window.setTimeout(() => setMessage(null), message.undoId ? 8000 : 4000);
+    return () => window.clearTimeout(t);
+  }, [message]);
 
   if (!workspace) return null;
   const ws = workspace;
@@ -71,7 +81,7 @@ export function QuickEntry() {
 
   async function persist(input: TxInput, learn: { suggestedCategoryId: string } | null): Promise<string | null> {
     try {
-      await createTransaction(ws.id, input, keyRef.current);
+      const newId = await createTransaction(ws.id, input, keyRef.current);
       if (input.categoryId && learn && input.categoryId !== learn.suggestedCategoryId) {
         const keyword = ruleKeywordFromDescription(input.description);
         if (keyword) await saveRule(ws.id, keyword, input.categoryId).catch(() => undefined);
@@ -80,12 +90,23 @@ export function QuickEntry() {
       bump();
       setMessage({
         tone: 'success',
+        undoId: newId,
         text: `Registrado: ${input.description} · ${formatCentsToBRL(input.amountCents)} · ${input.kind === 'income' ? 'Receita' : 'Despesa'}`,
       });
       setText('');
       return null;
     } catch (e) {
       return mapDbError(e);
+    }
+  }
+
+  async function undo(id: string) {
+    try {
+      await deleteTransaction(id);
+      bump();
+      setMessage({ tone: 'success', text: 'Lançamento desfeito.' });
+    } catch (e) {
+      setMessage({ tone: 'error', text: mapDbError(e) });
     }
   }
 
@@ -140,6 +161,7 @@ export function QuickEntry() {
           </label>
           <input
             id="quick-entry"
+            ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={200}
@@ -184,15 +206,43 @@ export function QuickEntry() {
             </span>
           )
         ) : (
-          usage?.limit != null && (
-            <span className="text-faint">
-              {usage.count} de {usage.limit} lançamentos usados neste mês
+          usage?.count === 0 ? (
+            <span className="flex flex-wrap items-center gap-2 text-faint">
+              <span>Experimente:</span>
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex}
+                  type="button"
+                  onClick={() => {
+                    setText(ex);
+                    inputRef.current?.focus();
+                  }}
+                  className="rounded-md border border-line px-2.5 py-1 text-xs font-semibold text-mute transition-colors hover:border-line2 hover:text-fg"
+                >
+                  {ex}
+                </button>
+              ))}
             </span>
+          ) : (
+            usage?.limit != null && (
+              <span className="text-faint">
+                {usage.count} de {usage.limit} lançamentos usados neste mês
+              </span>
+            )
           )
         )}
       </div>
 
-      {message && <Alert tone={message.tone}>{message.text}</Alert>}
+      {message && (
+        <Alert tone={message.tone}>
+          {message.text}
+          {message.undoId && (
+            <button type="button" onClick={() => void undo(message.undoId as string)} className="ml-3 font-semibold underline underline-offset-2">
+              Desfazer
+            </button>
+          )}
+        </Alert>
+      )}
 
       <Modal open={draft !== null} title={draft?.title ?? ''} onClose={() => setDraft(null)}>
         {draft && (

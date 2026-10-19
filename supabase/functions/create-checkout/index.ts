@@ -1,6 +1,6 @@
 // Cria a cobrança no Mercado Pago. Exige usuário autenticado (JWT) e administrador do espaço de trabalho.
 // O preço vem SEMPRE da tabela `plans`, nunca do navegador.
-import { buildPreapprovalBody, buildPreferenceBody, isBillingMode, isSellablePlan } from '../_shared/billing-core.ts';
+import { buildPreapprovalBody, buildPreferenceBody, isBillingMode, isSellablePlan, normalizePayerEmail } from '../_shared/billing-core.ts';
 import { MpError, createMpClient } from '../_shared/mp-client.ts';
 import { corsHeaders, createBillingDb, env, json, serviceClient, userClient } from '../_deno/runtime.ts';
 
@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
   const email = auth.user?.email;
   if (authError || !auth.user || !email) return json({ error: 'UNAUTHENTICATED' }, 401, cors);
 
-  let input: { plan?: unknown; mode?: unknown } = {};
+  let input: { plan?: unknown; mode?: unknown; payerEmail?: unknown } = {};
   try {
     input = await req.json();
   } catch {
@@ -27,6 +27,9 @@ Deno.serve(async (req) => {
   }
   if (!isSellablePlan(input.plan) || !isBillingMode(input.mode)) return json({ error: 'INVALID_REQUEST' }, 400, cors);
   const { plan, mode } = input;
+  // No cartão, a assinatura fica ligada ao e-mail da conta Mercado Pago de QUEM PAGA (pode ser diferente do e-mail do CaixaPro).
+  const chosenEmail = mode === 'card' ? normalizePayerEmail(input.payerEmail, email) : email;
+  if (!chosenEmail) return json({ error: 'INVALID_REQUEST' }, 400, cors);
 
   const { data: ws } = await user.from('workspaces').select('id').limit(1).maybeSingle();
   if (!ws) return json({ error: 'NO_WORKSPACE' }, 404, cors);
@@ -64,7 +67,7 @@ Deno.serve(async (req) => {
   const sandbox = Deno.env.get('MP_SANDBOX') === 'true';
   // No modo de teste, o Mercado Pago só aceita comprador de teste quando o vendedor é de teste.
   // MP_TEST_PAYER_EMAIL = e-mail da conta de teste COMPRADORA. Em produção usa o e-mail do próprio usuário.
-  const payerEmail = sandbox ? (Deno.env.get('MP_TEST_PAYER_EMAIL') || email) : email;
+  const payerEmail = sandbox ? (Deno.env.get('MP_TEST_PAYER_EMAIL') || chosenEmail) : chosenEmail;
   const mp = createMpClient(env('MP_ACCESS_TOKEN'));
 
   try {

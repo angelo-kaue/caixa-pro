@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, formatDateBR, isValidYMD, monthBounds, shiftMonth } from './dates';
+import { addDays, formatDateBR, formatRelativeDate, isValidYMD, monthBounds, shiftMonth } from './dates';
 
 describe('dates', () => {
   it('valida dias do mês, inclusive bissexto', () => {
@@ -19,5 +19,15 @@ describe('dates', () => {
   });
   it('formata em pt-BR', () => {
     expect(formatDateBR('2026-10-05')).toBe('05/10/2026');
+  });
+});
+
+describe('formatRelativeDate', () => {
+  it('hoje, ontem, mesmo ano e outro ano', () => {
+    expect(formatRelativeDate('2026-10-17', '2026-10-17')).toBe('Hoje');
+    expect(formatRelativeDate('2026-10-16', '2026-10-17')).toBe('Ontem');
+    expect(formatRelativeDate('2026-09-30', '2026-10-17')).toBe('30/09');
+    expect(formatRelativeDate('2025-12-31', '2026-10-17')).toBe('31/12/2025');
+    expect(formatRelativeDate('2026-12-31', '2027-01-01')).toBe('Ontem');
   });
 });

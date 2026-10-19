@@ -18,6 +18,14 @@ export const isBillingMode = (v: unknown): v is BillingMode => v === 'card' || v
 export const isUuid = (v: unknown): v is string =>
   typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
+/** E-mail do pagador no Mercado Pago (o da conta de quem vai pagar). Vazio usa o padrão; inválido devolve null. */
+export function normalizePayerEmail(value: unknown, fallback: string): string | null {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value !== 'string') return null;
+  const v = value.trim().toLowerCase();
+  return v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? v : null;
+}
+
 export const toCents = (amount: unknown): number | null =>
   typeof amount === 'number' && Number.isFinite(amount) ? Math.round(amount * 100) : null;
 

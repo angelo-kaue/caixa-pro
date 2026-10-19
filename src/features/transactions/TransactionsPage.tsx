@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Money } from '@/components/ui/Money';
 import type { Kind } from '@/domain/categorizer';
 import { ruleKeywordFromDescription } from '@/domain/categorizer';
-import { formatDateBR } from '@/domain/dates';
+import { formatDateBR, formatRelativeDate, todayISO } from '@/domain/dates';
 import { formatCentsForInput, formatCentsToBRL } from '@/domain/money';
 import { mapDbError } from '@/services/dbErrors';
 import { deleteTransaction, listTransactions, updateTransaction, type SortKey, type TxFilters } from '@/services/transactionService';
@@ -129,7 +129,7 @@ export function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-h1">Lançamentos</h1>
+      <h1 className="page-title">Lançamentos</h1>
 
       <section aria-label="Filtros" className="space-y-3">
         <div className="flex items-end gap-2">
@@ -205,7 +205,7 @@ export function TransactionsPage() {
                   {rows.map((t) => (
                     <tr key={t.id}>
                       <td className="num whitespace-nowrap text-mute">
-                        <span className="sm:hidden">{formatDateBR(t.occurred_on).slice(0, 5)}</span>
+                        <span className="sm:hidden">{formatRelativeDate(t.occurred_on, todayISO())}</span>
                         <span className="hidden sm:inline">{formatDateBR(t.occurred_on)}</span>
                       </td>
                       <td>

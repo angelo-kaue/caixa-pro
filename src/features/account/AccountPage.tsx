@@ -50,7 +50,7 @@ export function AccountPage() {
   return (
     <div className="max-w-2xl space-y-12">
       <div>
-        <h1 className="text-h1">Minha conta</h1>
+        <h1 className="page-title">Minha conta</h1>
         <p className="mt-1 text-sm text-mute">
           Conectado como <span className="text-fg">{user?.email}</span>
         </p>

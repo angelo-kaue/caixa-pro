@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { QuickEntry } from '@/features/transactions/QuickEntry';
+import { QuickEntryFab } from './QuickEntryFab';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
 const baseNav = [
@@ -74,6 +75,7 @@ export function AppLayout() {
           <Outlet />
         </div>
       </main>
+      <QuickEntryFab />
 
       <nav
         aria-label="Principal (mobile)"

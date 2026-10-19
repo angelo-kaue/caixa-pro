@@ -16,7 +16,7 @@ export function PlanningPage() {
   const [tab, setTab] = useState<TabId>('budgets');
   return (
     <div className="space-y-6">
-      <h1 className="text-h1">Planejamento</h1>
+      <h1 className="page-title">Planejamento</h1>
       <div role="tablist" aria-label="Seções de planejamento" className="flex gap-1 border-b border-line">
         {tabs.map((t) => (
           <button

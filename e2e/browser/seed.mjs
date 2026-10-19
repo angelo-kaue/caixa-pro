@@ -44,6 +44,8 @@ async function seedWorkspace(uid, type, name, balance, txs, plan = 'free') {
 const free = await makeUser('free');
 const pro = await makeUser('pro');
 const empty = await makeUser('vazio');
+const novo = await makeUser('novo');
+await seedWorkspace(novo, 'personal', 'Começando', 0, []);
 
 const freeTxs = [
   ['income', 450000, 'Salário', 'Salário', 3],
@@ -76,6 +78,6 @@ await client.query(
 );
 await client.query(`insert into public.goals (workspace_id, name, target_cents, current_cents, target_date) values ($1, 'Reserva de emergência', 3000000, 1250000, current_date + 240)`, [proWs]);
 
-writeFileSync('/tmp/e2e-users.json', JSON.stringify({ free, pro, empty }));
+writeFileSync('/tmp/e2e-users.json', JSON.stringify({ free, pro, empty, novo }));
 console.log('seed ok', { free, pro, empty });
 await client.end();

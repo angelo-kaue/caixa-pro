@@ -65,7 +65,7 @@ export function BillsPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-h1">Contas a pagar e a receber</h1>
+          <h1 className="page-title">Contas a pagar e a receber</h1>
           <p className="mt-1 text-sm text-mute">Compromissos com data de vencimento. Ao baixar uma conta, o CaixaPro cria o lançamento correspondente.</p>
         </div>
         <Button onClick={() => setEditing('new')}>

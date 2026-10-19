@@ -45,6 +45,15 @@ export function formatDateBR(iso: string): string {
   return `${pad(d)}/${pad(m)}/${y}`;
 }
 
+/** "Hoje", "Ontem" ou dd/mm (com o ano quando for de outro ano). */
+export function formatRelativeDate(iso: string, todayIso: string): string {
+  if (iso === todayIso) return 'Hoje';
+  if (iso === addDays(todayIso, -1)) return 'Ontem';
+  const a = splitISO(iso);
+  const dm = `${pad(a.d)}/${pad(a.m)}`;
+  return a.y === splitISO(todayIso).y ? dm : `${dm}/${a.y}`;
+}
+
 export function formatMonthYearBR(iso: string): string {
   const { y, m } = splitISO(iso);
   const names = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];

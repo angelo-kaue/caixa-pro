@@ -9,6 +9,7 @@ describe('mapBillingError', () => {
     ['PROVIDER_ERROR', 'Mercado Pago'],
     ['NOTHING_TO_CANCEL', 'Pix não renovam'],
     ['UNAUTHENTICATED', 'sessão expirou'],
+    ['CARD_DISABLED', 'Use o Pix'],
     ['CODIGO_NOVO', 'Tente novamente'],
     [null, 'Tente novamente'],
     [undefined, 'Tente novamente'],

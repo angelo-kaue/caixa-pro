@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
   }
   if (!isSellablePlan(input.plan) || !isBillingMode(input.mode)) return json({ error: 'INVALID_REQUEST' }, 400, cors);
   const { plan, mode } = input;
+  if (mode === 'card' && Deno.env.get('CARD_ENABLED') === 'false') return json({ error: 'CARD_DISABLED' }, 409, cors);
   // No cartão, a assinatura fica ligada ao e-mail da conta Mercado Pago de QUEM PAGA (pode ser diferente do e-mail do CaixaPro).
   const chosenEmail = mode === 'card' ? normalizePayerEmail(input.payerEmail, email) : email;
   if (!chosenEmail) return json({ error: 'INVALID_REQUEST' }, 400, cors);

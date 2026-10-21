@@ -116,6 +116,20 @@ A assinatura do Mercado Pago é ligada a um e-mail, e quem paga precisa entrar c
 de plano pergunta o **e-mail da conta do Mercado Pago** antes de ir ao cartão (o padrão é o e-mail do CaixaPro). Se for diferente, o
 Mercado Pago responde "Ops, ocorreu um erro". Para testar com outra pessoa: informe o e-mail da conta dela e envie o link gerado.
 
+## Recusas no cartão (cc_rejected_*)
+O Mercado Pago só explica a recusa com um código no detalhe do pagamento (`status_detail`). Famílias de motivo:
+- **Prevenção a fraude** (`cc_rejected_high_risk`, `cc_rejected_other_reason`, `cc_rejected_blacklist`): a análise de risco do Mercado Pago ou do banco.
+  `other_reason` vem do banco emissor e é uma estimativa de risco. Contas de vendedor novas e compradores sem conta (visitante) costumam ter mais recusas.
+- **Banco emissor** (saldo, limite, cartão bloqueado para compra online): o comprador resolve com o banco.
+- **Preenchimento** (número, validade, código errados).
+
+Atenção: tentativas repetidas com os mesmos dados (mesmo valor, mesmo item, mesmo pagador) podem acionar o antifraude e bloquear as seguintes por um tempo.
+**Não repita o teste várias vezes seguidas.** Espere de 24 a 48 horas e varie o valor.
+
+Para ver o motivo exato, abra a venda em **Atividades** no Mercado Pago, ou consulte a tabela `payment_events` (a coluna `outcome` agora traz
+`...:rejected/cc_rejected_...` nas recusas). Se o cartão estiver sendo recusado, desligue-o até entender o motivo:
+`npx supabase secrets set CARD_ENABLED=false` (servidor) e `VITE_CARD_ENABLED=false` nas variáveis da Netlify (tela). O Pix continua normal.
+
 ## CPF (sem CNPJ)
 O Mercado Pago permite abrir conta com CPF e, segundo o próprio material do Mercado Pago, receber por Pix e cobranças
 online. **Não consegui confirmar** em documentação oficial se as credenciais de produção da API de Assinaturas funcionam

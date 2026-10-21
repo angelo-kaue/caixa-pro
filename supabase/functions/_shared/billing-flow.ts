@@ -79,15 +79,18 @@ async function reconcileCard(deps: BillingDeps, pre: MpPreapproval): Promise<str
   return `applied:${d.status}`;
 }
 
+/** "status/status_detail" do pagamento, para o diagnóstico (ex.: rejected/cc_rejected_high_risk). */
+const statusOf = (p: MpPayment): string => `${p.status ?? '?'}${p.status_detail ? `/${p.status_detail}` : ''}`;
+
 async function reconcilePix(deps: BillingDeps, payment: MpPayment): Promise<string> {
   const ref = payment.external_reference;
   const checkout = isUuid(ref) ? await deps.db.getCheckout(ref) : null;
   if (!checkout) return 'ignored:not_ours';
-  if (checkout.mode === 'card') return 'ignored:card_handled_by_subscription';
+  if (checkout.mode === 'card') return `ignored:card_handled_by_subscription:${statusOf(payment)}`;
 
   const price = await deps.db.getPlanPrice(checkout.plan_id);
   const d = decidePixPayment({ payment, checkout, price });
-  if (d.action === 'ignore') return `ignored:${d.reason}`;
+  if (d.action === 'ignore') return d.reason === 'not_approved' ? `ignored:not_approved:${statusOf(payment)}` : `ignored:${d.reason}`;
 
   const before = await deps.db.getSubscription(d.workspaceId);
   const applied = await deps.db.grantPeriod({ workspaceId: d.workspaceId, plan: d.plan, days: d.days, eventKey: d.eventKey, mode: 'pix', stack: true });

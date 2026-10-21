@@ -94,7 +94,7 @@ for (const vp of ['mobile', 'desktop']) {
   await visit(`app-resumo-${vp}`, vp, users.free, '/app', { expectText: ['Resumo', 'Saldo registrado', 'Receitas', 'Últimos lançamentos', 'Orçamentos do mês', 'Ontem'] });
   await visit(`app-lancamentos-${vp}`, vp, users.free, '/app/lancamentos', { expectText: ['Lançamentos', 'Mercado', 'Uber'] });
   await visit(`app-planejamento-${vp}`, vp, users.free, '/app/planejamento', { expectText: ['Planejamento', 'Alimentação'] });
-  await visit(`app-plano-${vp}`, vp, users.free, '/app/plano', { expectText: ['Plano e cobrança', 'Free', 'Assinar no cartão', 'E-mail da sua conta do Mercado Pago'] });
+  await visit(`app-plano-${vp}`, vp, users.free, '/app/plano', { expectText: ['Plano e cobrança', 'Free', 'Assinar no cartão', 'Outra pessoa vai pagar?'] });
   await visit(`app-relatorios-free-${vp}`, vp, users.free, '/app/relatorios', { expectText: 'fazem parte do plano Pro' });
 }
 await visit('app-plano-retorno-pix', 'mobile', users.free, '/app/plano?payment_id=123456&status=approved', { expectText: 'Estamos confirmando seu pagamento', allowHttp: ['404', '502'] });

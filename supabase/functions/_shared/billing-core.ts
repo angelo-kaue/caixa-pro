@@ -44,6 +44,8 @@ export interface MpPreapproval {
 export interface MpPayment {
   id: number | string;
   status?: string;
+  /** Motivo detalhado (ex.: cc_rejected_high_risk). */
+  status_detail?: string;
   external_reference?: string | null;
   transaction_amount?: number;
   currency_id?: string;

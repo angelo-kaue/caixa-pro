@@ -9,4 +9,10 @@ export const BILLING_ENABLED = import.meta.env.VITE_BILLING_ENABLED === 'true';
 /** Planos que podem ser contratados hoje (o servidor aplica a mesma regra). */
 export const SELLABLE_PLANS: readonly PlanId[] = ['pro'];
 
+/**
+ * Pagamento no cartão (assinatura). Desligue com VITE_CARD_ENABLED=false enquanto o cartão estiver sendo recusado
+ * (e grave também CARD_ENABLED=false nos secrets do Supabase, para o servidor recusar pedidos de cartão).
+ */
+export const CARD_ENABLED = import.meta.env.VITE_CARD_ENABLED !== 'false';
+
 export const PIX_PERIOD_DAYS = 30;

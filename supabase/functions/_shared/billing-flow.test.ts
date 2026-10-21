@@ -135,7 +135,7 @@ describe('pagamento avulso (Pix)', () => {
 
   it('pagamentos pendentes ou de valor errado não concedem nada', async () => {
     const t = setup({ checkout: pix, payments: { '1': { ...approved(1), status: 'pending' }, '2': { ...approved(2), transaction_amount: 0.01 } } });
-    expect(await processBillingEvent(t.deps, 'payment', '1')).toBe('ignored:not_approved');
+    expect(await processBillingEvent(t.deps, 'payment', '1')).toBe('ignored:not_approved:pending');
     expect(await processBillingEvent(t.deps, 'payment', '2')).toBe('ignored:amount_mismatch');
     expect(t.grantPeriod).not.toHaveBeenCalled();
   });
@@ -148,7 +148,7 @@ describe('pagamento avulso (Pix)', () => {
 
   it('cobranças da assinatura de cartão são tratadas só pelo fluxo de assinatura', async () => {
     const t = setup({ checkout: { ...pix, mode: 'card' }, payments: { '4': approved(4) } });
-    expect(await processBillingEvent(t.deps, 'payment', '4')).toBe('ignored:card_handled_by_subscription');
+    expect(await processBillingEvent(t.deps, 'payment', '4')).toBe('ignored:card_handled_by_subscription:approved');
     expect(t.grantPeriod).not.toHaveBeenCalled();
   });
 
@@ -190,7 +190,7 @@ describe('sincronização ativa (sem webhook)', () => {
 
   it('pagamento pendente não concede', async () => {
     const t = setup({ checkout: { ...pixCk }, recent: [pixCk], search: { [CK]: [{ ...paid, status: 'pending' }] } });
-    expect((await syncWorkspace(t.deps, 'ws-1'))[0]?.outcomes).toEqual(['ignored:not_approved']);
+    expect((await syncWorkspace(t.deps, 'ws-1'))[0]?.outcomes).toEqual(['ignored:not_approved:pending']);
   });
 
   it('assinatura de cartão autorizada é aplicada a partir da assinatura criada', async () => {
@@ -247,12 +247,24 @@ describe('consulta direta pelo número do pagamento', () => {
 
   it('pagamento pendente não concede', async () => {
     const t = setup({ checkout: { ...pixCk }, recent: [pixCk], payments: { '903': pay({ id: 903, status: 'pending' }) } });
-    expect((await syncWorkspace(t.deps, 'ws-1', { paymentId: '903' }))[0]?.outcomes).toEqual(['ignored:not_approved']);
+    expect((await syncWorkspace(t.deps, 'ws-1', { paymentId: '903' }))[0]?.outcomes).toEqual(['ignored:not_approved:pending']);
   });
 
   it('número de pagamento inexistente vira resultado de erro, não exceção', async () => {
     const t = setup({ checkout: { ...pixCk }, recent: [pixCk] });
     const r = await syncWorkspace(t.deps, 'ws-1', { paymentId: '999' });
     expect(r[0]?.outcomes[0]).toMatch(/^erro:/);
+  });
+});
+
+describe('diagnóstico de recusas', () => {
+  it('o motivo detalhado da recusa aparece no resultado', async () => {
+    const pix: CheckoutRow = { id: CK, workspace_id: 'ws-1', plan_id: 'pro', mode: 'pix' };
+    const t = setup({ checkout: pix, payments: { '7': { id: 7, status: 'rejected', status_detail: 'cc_rejected_high_risk', external_reference: CK, transaction_amount: 19.9, currency_id: 'BRL' } } });
+    expect(await processBillingEvent(t.deps, 'payment', '7')).toBe('ignored:not_approved:rejected/cc_rejected_high_risk');
+  });
+  it('também nas cobranças de assinatura de cartão', async () => {
+    const t = setup({ payments: { '8': { id: 8, status: 'rejected', status_detail: 'cc_rejected_other_reason', external_reference: CK, transaction_amount: 19.9, currency_id: 'BRL' } } });
+    expect(await processBillingEvent(t.deps, 'payment', '8')).toBe('ignored:card_handled_by_subscription:rejected/cc_rejected_other_reason');
   });
 });

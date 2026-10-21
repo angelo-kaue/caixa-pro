@@ -8,6 +8,7 @@ const MESSAGES: Record<string, string> = {
   PROVIDER_ERROR: 'O Mercado Pago não conseguiu processar agora. Tente novamente em instantes.',
   NOTHING_TO_CANCEL: 'Não há assinatura recorrente ativa para cancelar. Pagamentos por Pix não renovam sozinhos.',
   UNAUTHENTICATED: 'Sua sessão expirou. Entre novamente.',
+  CARD_DISABLED: 'O pagamento no cartão está temporariamente indisponível. Use o Pix.',
 };
 
 export function mapBillingError(code: string | null | undefined): string {

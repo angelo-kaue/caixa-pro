@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { BILLING_ENABLED, PIX_PERIOD_DAYS, SELLABLE_PLANS } from '@/config/billing';
+import { BILLING_ENABLED, CARD_ENABLED, PIX_PERIOD_DAYS, SELLABLE_PLANS } from '@/config/billing';
 import { PLANS, PLAN_ORDER, type PlanId } from '@/config/plans';
 import { formatDateBR, toISODate } from '@/domain/dates';
 import { formatCentsToBRL } from '@/domain/money';
@@ -43,6 +43,7 @@ export function PlanPage() {
   const { user } = useAuth();
   const [mpEmail, setMpEmail] = useState(user?.email ?? '');
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [otherPayer, setOtherPayer] = useState(false);
   const [diagnostic, setDiagnostic] = useState<SyncOutcome[] | null>(null);
   const planRef = useRef<PlanId>(plan);
   planRef.current = plan;
@@ -215,23 +216,36 @@ export function PlanPage() {
                 {id === 'enterprise' && <p className="mt-4 text-xs text-faint">Em desenvolvimento: ainda não está disponível para contratação.</p>}
                 {sellable && BILLING_ENABLED && (
                   <div className="mt-5 space-y-2">
-                    <Input
-                      label="E-mail da sua conta do Mercado Pago"
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      value={mpEmail}
-                      onChange={(e) => setMpEmail(e.target.value)}
-                      error={emailError ?? undefined}
-                      hint="Usado no pagamento no cartão: precisa ser o e-mail com o qual você entra no Mercado Pago."
-                    />
-                    <Button className="w-full" loading={busy === 'card'} disabled={busy !== null || (current && cardCopy.disabled)} onClick={() => startPurchase('card')}>
-                      {current ? cardCopy.label : 'Assinar no cartão (mensal)'}
-                    </Button>
-                    <Button variant="secondary" className="w-full" loading={busy === 'pix'} disabled={busy !== null} onClick={() => startPurchase('pix')}>
+                    {CARD_ENABLED &&
+                      (otherPayer ? (
+                        <Input
+                          label="E-mail de quem vai pagar"
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          value={mpEmail}
+                          onChange={(e) => setMpEmail(e.target.value)}
+                          error={emailError ?? undefined}
+                          hint="Opcional. Só mude se outra pessoa for pagar no cartão."
+                        />
+                      ) : (
+                        <button type="button" onClick={() => setOtherPayer(true)} className="text-xs font-semibold text-brand hover:underline">
+                          Outra pessoa vai pagar?
+                        </button>
+                      ))}
+                    {CARD_ENABLED && (
+                      <Button className="w-full" loading={busy === 'card'} disabled={busy !== null || (current && cardCopy.disabled)} onClick={() => startPurchase('card')}>
+                        {current ? cardCopy.label : 'Assinar no cartão (mensal)'}
+                      </Button>
+                    )}
+                    <Button variant={CARD_ENABLED ? 'secondary' : 'primary'} className="w-full" loading={busy === 'pix'} disabled={busy !== null} onClick={() => startPurchase('pix')}>
                       {current ? pixCopy.label : `Pagar ${PIX_PERIOD_DAYS} dias com Pix`}
                     </Button>
-                    <p className="text-xs text-faint">Cartão renova sozinho e você pode cancelar quando quiser. Pix libera {PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.</p>
+                    <p className="text-xs text-faint">
+                      {CARD_ENABLED
+                        ? `Cartão renova sozinho e você pode cancelar quando quiser. Pix libera ${PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.`
+                        : `O pagamento no cartão estará disponível em breve. Por enquanto, o Pix libera ${PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.`}
+                    </p>
                   </div>
                 )}
               </article>

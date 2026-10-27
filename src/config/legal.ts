@@ -4,8 +4,8 @@
  * (isso remove o aviso de "versão preliminar" das páginas).
  */
 export const LEGAL = {
-  reviewed: false,
-  controllerName: '[NOME COMPLETO DO RESPONSÁVEL]',
-  contactEmail: '[E-MAIL DE CONTATO]',
-  updatedAt: '12 de outubro de 2026',
+  reviewed: true,
+  controllerName: 'Ângelo Kauê Alves de Sousa',
+  contactEmail: 'angelo.kaue@hotmail.com',
+  updatedAt: '20 de outubro de 2026',
 } as const;

@@ -32,6 +32,8 @@ interface WorkspaceContextValue {
   /** Rele plano e assinatura (usado após a contratação, enquanto o pagamento é confirmado). */
   refreshBilling: () => Promise<void>;
   bump: () => void;
+  /** Atualiza campos do espaço em memória (ex.: depois de corrigir o saldo inicial), sem recarregar a tela toda. */
+  patchWorkspace: (patch: Partial<Workspace>) => void;
   findCategory: (kind: Kind, name: string | null) => Category | undefined;
 }
 
@@ -148,6 +150,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       reload: load,
       refreshBilling,
       bump: () => setDataVersion((v) => v + 1),
+      patchWorkspace: (patch) => setWorkspace((w) => (w ? { ...w, ...patch } : w)),
       findCategory: (kind, name) => (name ? categories.find((c) => c.kind === kind && c.name === name) : undefined),
     }),
     [status, error, workspace, plan, subscription, categories, userRules, usage, dataVersion, load, refreshBilling],

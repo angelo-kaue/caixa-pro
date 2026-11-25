@@ -130,6 +130,11 @@ Para ver o motivo exato, abra a venda em **Atividades** no Mercado Pago, ou cons
 `...:rejected/cc_rejected_...` nas recusas). Se o cartão estiver sendo recusado, desligue-o até entender o motivo:
 `npx supabase secrets set CARD_ENABLED=false` (servidor) e `VITE_CARD_ENABLED=false` nas variáveis da Netlify (tela). O Pix continua normal.
 
+### O que os testes mostraram (outubro/2026)
+Cartão pago **logado numa conta do Mercado Pago**: aprovado (assinatura criada e cobrada). O mesmo cartão como **visitante** ("não tenho conta"):
+recusado com `cc_rejected_high_risk`. Todas as recusas registradas foram de visitantes, com vendedor novo e pessoa física. Por isso a tela orienta a
+entrar na conta do Mercado Pago antes de pagar no cartão e oferece o Pix, que não depende de conta. Não repita testes com o mesmo cartão em sequência.
+
 ## CPF (sem CNPJ)
 O Mercado Pago permite abrir conta com CPF e, segundo o próprio material do Mercado Pago, receber por Pix e cobranças
 online. **Não consegui confirmar** em documentação oficial se as credenciais de produção da API de Assinaturas funcionam

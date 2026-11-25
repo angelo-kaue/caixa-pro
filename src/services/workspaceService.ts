@@ -28,6 +28,15 @@ export async function createWorkspace(type: WorkspaceType, name: string, initial
   return data as string;
 }
 
+/** Corrige o saldo inicial do espaço (somente administrador; validado no banco). */
+export async function setInitialBalance(workspaceId: string, cents: number): Promise<void> {
+  const { error } = await getSupabase().rpc('set_initial_balance', {
+    p_workspace: workspaceId,
+    p_initial_balance_cents: cents,
+  });
+  if (error) throw error;
+}
+
 export async function listCategories(workspaceId: string): Promise<Category[]> {
   const { data, error } = await getSupabase()
     .from('categories')

@@ -5,20 +5,50 @@ import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { todayISO } from '@/domain/dates';
+import { formatCentsForInput, parseMoneyToCents } from '@/domain/money';
 import { downloadTextFile } from '@/lib/download';
 import { deleteAccount, exportMyData, isDeletionConfirmed } from '@/services/accountService';
 import { mapDbError } from '@/services/dbErrors';
+import { setInitialBalance } from '@/services/workspaceService';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
 export function AccountPage() {
   const { user } = useAuth();
-  const { subscription, plan } = useWorkspace();
+  const { subscription, plan, workspace, patchWorkspace, bump } = useWorkspace();
+  const savedBalance = workspace?.initial_balance_cents ?? 0;
+  const [balance, setBalance] = useState(formatCentsForInput(savedBalance));
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [balanceSaved, setBalanceSaved] = useState(false);
+  const [savingBalance, setSavingBalance] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function onSaveBalance() {
+    if (!workspace) return;
+    setBalanceSaved(false);
+    const cents = balance.trim() === '' ? 0 : parseMoneyToCents(balance);
+    if (cents === null) {
+      setBalanceError('Informe um valor válido, como 1.500,00.');
+      return;
+    }
+    setBalanceError(null);
+    setSavingBalance(true);
+    try {
+      await setInitialBalance(workspace.id, cents);
+      patchWorkspace({ initial_balance_cents: cents });
+      setBalance(formatCentsForInput(cents));
+      bump();
+      setBalanceSaved(true);
+    } catch (e) {
+      setBalanceError(mapDbError(e));
+    } finally {
+      setSavingBalance(false);
+    }
+  }
 
   async function onExport() {
     setExporting(true);
@@ -56,7 +86,38 @@ export function AccountPage() {
         </p>
       </div>
 
-      <section aria-labelledby="install-title">
+      <section aria-labelledby="balance-title">
+        <h2 id="balance-title" className="text-h3">Saldo inicial</h2>
+        <p className="mt-1.5 text-sm text-mute">
+          Quanto você tinha antes do primeiro lançamento. Errou o valor do começo? Corrija aqui: o saldo atual é recalculado e nenhum lançamento é alterado.
+        </p>
+        {balanceSaved && <div className="mt-3"><Alert tone="info">Saldo inicial atualizado. O saldo atual já foi recalculado.</Alert></div>}
+        <form
+          className="mt-4 max-w-xs space-y-3"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSaveBalance();
+          }}
+        >
+          <Input
+            label="Saldo inicial"
+            inputMode="decimal"
+            placeholder="0,00"
+            value={balance}
+            onChange={(e) => {
+              setBalance(e.target.value);
+              setBalanceSaved(false);
+            }}
+            error={balanceError ?? undefined}
+          />
+          <Button type="submit" variant="secondary" loading={savingBalance} disabled={!workspace}>
+            Salvar saldo inicial
+          </Button>
+        </form>
+      </section>
+
+      <section aria-labelledby="install-title" className="border-t border-line pt-8">
         <h2 id="install-title" className="text-h3">Instalar no celular</h2>
         <p className="mt-1.5 text-sm text-mute">Adicione o CaixaPro à tela inicial para abrir em tela cheia, como um app.</p>
         <Link to="/instalar" className="mt-3 inline-block text-sm font-semibold text-brand hover:underline">Ver o passo a passo</Link>

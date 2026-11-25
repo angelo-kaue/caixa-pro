@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Receipt, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Receipt, Search, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
 import clsx from 'clsx';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +17,7 @@ import { saveRule } from '@/services/workspaceService';
 import type { Transaction } from '@/types/db';
 import { Loading } from '@/features/workspace/guards';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
+import { ImportStatementModal } from './ImportStatementModal';
 import { TransactionForm } from './TransactionForm';
 
 const PAGE_SIZE = 20;
@@ -46,6 +47,7 @@ export function TransactionsPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [retry, setRetry] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const wsId = workspace?.id;
   const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
@@ -129,7 +131,12 @@ export function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="page-title">Lançamentos</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="page-title">Lançamentos</h1>
+        <Button variant="secondary" onClick={() => setImportOpen(true)}>
+          <Upload size={16} aria-hidden="true" /> Importar extrato
+        </Button>
+      </div>
 
       <section aria-label="Filtros" className="space-y-3">
         <div className="flex items-end gap-2">
@@ -245,6 +252,8 @@ export function TransactionsPage() {
           </>
         )
       )}
+
+      <ImportStatementModal open={importOpen} onClose={() => setImportOpen(false)} />
 
       <Modal open={editing !== null} title="Editar lançamento" onClose={() => setEditing(null)}>
         {editing && (

@@ -122,7 +122,7 @@ export function PlanPage() {
     setEmailError(null);
     startChosen(mode);
   };
-  const startChosen = (mode: 'card' | 'pix') => ((mode === 'card' ? cardCopy : pixCopy).confirm ? setPendingMode(mode) : void buy(mode));
+  const startChosen = (mode: 'card' | 'pix') => (mode === 'card' || pixCopy.confirm ? setPendingMode(mode) : void buy(mode));
 
   const status = subscription ? describeStatus(subscription.status, subscription.cancel_at_period_end) : null;
   const until = subscription?.access_until ? formatDateBR(toISODate(new Date(subscription.access_until))) : null;
@@ -243,7 +243,7 @@ export function PlanPage() {
                     </Button>
                     <p className="text-xs text-faint">
                       {CARD_ENABLED
-                        ? `Cartão renova sozinho e você pode cancelar quando quiser. Pix libera ${PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.`
+                        ? `Cartão renova sozinho e você pode cancelar quando quiser. Para o cartão ser aprovado com mais facilidade, entre na sua conta do Mercado Pago na hora de pagar. Pix libera ${PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.`
                         : `O pagamento no cartão estará disponível em breve. Por enquanto, o Pix libera ${PIX_PERIOD_DAYS} dias e precisa ser pago de novo para continuar.`}
                     </p>
                   </div>
@@ -271,7 +271,30 @@ export function PlanPage() {
           return null;
         }}
       >
-        {pendingMode === 'card' ? cardCopy.confirm : pixCopy.confirm}
+        {pendingMode === 'card' ? (
+          <div className="space-y-3">
+            {cardCopy.confirm && <p>{cardCopy.confirm}</p>}
+            <p>
+              <strong className="text-fg">Dica para o pagamento ser aprovado:</strong> na tela do Mercado Pago, <strong className="text-fg">entre na sua conta do Mercado Pago</strong> (ou crie uma, é rápido) em vez de escolher “não tenho conta”. Pagamentos como visitante costumam ser recusados pela segurança do Mercado Pago.
+            </p>
+            <p>
+              Não tem conta ou prefere não usar?{' '}
+              <button
+                type="button"
+                className="font-semibold text-brand underline underline-offset-2"
+                onClick={() => {
+                  setPendingMode(null);
+                  startPurchase('pix');
+                }}
+              >
+                Pague por Pix
+              </button>
+              , que não precisa de conta.
+            </p>
+          </div>
+        ) : (
+          pixCopy.confirm
+        )}
       </ConfirmDialog>
 
       <ConfirmDialog

@@ -430,6 +430,25 @@ for (const [name, ua, waitMs, expected] of [
   }
 }
 
+// ---------- cartão: dica de entrar na conta do Mercado Pago antes de pagar ----------
+{
+  const page = await open('mobile', users.free);
+  try {
+    await page.goto(BASE + '/app/plano', { waitUntil: 'networkidle0' });
+    const h = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => b.innerText.includes('Assinar no cartão')) ?? null);
+    if (!h.asElement()) throw new Error('botão do cartão não encontrado');
+    await h.asElement().click();
+    await page.waitForSelector('dialog[open]', { timeout: 6000 });
+    const dlg = await page.evaluate(() => document.querySelector('dialog[open]').innerText);
+    for (const t of ['entre na sua conta do Mercado Pago', 'Pague por Pix', 'Continuar para o pagamento']) if (!dlg.includes(t)) note('FALHA', 'cartao-dica-conta', `aviso sem o texto: "${t}"`);
+    await page.screenshot({ path: `${OUT}/cartao-dica-conta.png` });
+  } catch (e) {
+    note('FALHA', 'cartao-dica-conta', e.message);
+  } finally {
+    await page.__browser.close();
+  }
+}
+
 const order = { FALHA: 0, ERRO: 1, A11Y: 2, INFO: 3 };
 findings.sort((a, b) => order[a.level] - order[b.level]);
 console.log(`\n=== ${findings.filter((f) => f.level !== 'INFO').length} achados ===`);

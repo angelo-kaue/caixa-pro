@@ -15,6 +15,7 @@ from (values
   ('0006_billing', to_regclass('public.payment_events') is not null and exists (select 1 from fn where proname = 'grant_paid_period')),
   ('0007_lgpd', exists (select 1 from fn where proname = 'export_my_data')),
   ('0008_pix_clears_card_ref', exists (select 1 from fn where proname = 'grant_paid_period' and prosrc like '%p_mode = ''pix'' then null%')),
-  ('0009_edit_initial_balance', exists (select 1 from fn where proname = 'set_initial_balance'))
+  ('0009_edit_initial_balance', exists (select 1 from fn where proname = 'set_initial_balance')),
+  ('0010_push_reminders', to_regclass('public.push_subscriptions') is not null and exists (select 1 from fn where proname = 'reminder_targets'))
 ) as m(migracao, aplicada)
 order by m.migracao;

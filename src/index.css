@@ -69,3 +69,13 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Celulares e tablets: campos com menos de 16px fazem o iPhone dar zoom sozinho ao tocar e o zoom fica depois.
+   Com 16px isso não acontece; o zoom por pinça continua liberado para quem quiser. */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

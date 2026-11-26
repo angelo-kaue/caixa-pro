@@ -15,6 +15,7 @@ import { mapDbError } from '@/services/dbErrors';
 import { getSummary, listTransactions } from '@/services/transactionService';
 import type { Budget, Summary, Transaction } from '@/types/db';
 import { Loading } from '@/features/workspace/guards';
+import { ReminderPrompt } from '@/features/notifications/ReminderPrompt';
 import { BillsGlance } from './BillsGlance';
 import { InsightsCard } from './InsightsCard';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
@@ -95,6 +96,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-10">
+      <ReminderPrompt />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="page-title">Resumo</h1>

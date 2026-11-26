@@ -10,6 +10,7 @@ import { downloadTextFile } from '@/lib/download';
 import { deleteAccount, exportMyData, isDeletionConfirmed } from '@/services/accountService';
 import { mapDbError } from '@/services/dbErrors';
 import { setInitialBalance } from '@/services/workspaceService';
+import { ReminderSettings } from '@/features/notifications/ReminderSettings';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
 
@@ -116,6 +117,8 @@ export function AccountPage() {
           </Button>
         </form>
       </section>
+
+      <ReminderSettings />
 
       <section aria-labelledby="install-title" className="border-t border-line pt-8">
         <h2 id="install-title" className="text-h3">Instalar no celular</h2>

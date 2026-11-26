@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BarChart3, FileText, LayoutDashboard, List, Target, UserRound } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import clsx from 'clsx';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { syncPush } from '@/features/notifications/push';
 import { QuickEntry } from '@/features/transactions/QuickEntry';
 import { QuickEntryFab } from './QuickEntryFab';
 import { useWorkspace } from '@/features/workspace/WorkspaceProvider';
@@ -23,6 +24,9 @@ export function AppLayout() {
   const { workspace, plan } = useWorkspace();
   const { signOut } = useAuth();
   const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    void syncPush();
+  }, []);
   const nav = workspace?.type === 'business' ? [...baseNav, billsNav, reportsNav] : [...baseNav, reportsNav];
 
   return (
@@ -30,7 +34,9 @@ export function AppLayout() {
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/95 backdrop-blur-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-6">
-            <Logo size={24} />
+            <Link to="/app" aria-label="CaixaPro: ir para o Resumo" className="rounded-md">
+              <Logo size={24} />
+            </Link>
             <nav aria-label="Principal" className="hidden items-center gap-1 sm:flex">
               {nav.map(({ to, label, end }) => (
                 <NavLink

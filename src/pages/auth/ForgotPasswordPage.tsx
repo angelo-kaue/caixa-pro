@@ -7,11 +7,15 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { AuthLayout } from '@/features/auth/AuthLayout';
 import { requestPasswordReset } from '@/features/auth/authService';
+import { captchaEnabled } from '@/features/auth/captcha';
 import { forgotSchema, type ForgotValues } from '@/features/auth/schemas';
+import { Turnstile } from '@/features/auth/Turnstile';
 
 export function ForgotPasswordPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   const {
     register,
@@ -21,7 +25,8 @@ export function ForgotPasswordPage() {
 
   const onSubmit = handleSubmit(async (values) => {
     setServerError(null);
-    const { error } = await requestPasswordReset(values.email);
+    const { error } = await requestPasswordReset(values.email, captchaToken ?? undefined);
+    setResetSignal((n) => n + 1);
     if (error) setServerError(error);
     else setDone(true);
   });
@@ -48,7 +53,8 @@ export function ForgotPasswordPage() {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {serverError && <Alert tone="error">{serverError}</Alert>}
         <Input label="E-mail" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} {...register('email')} />
-        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+        <Turnstile onToken={setCaptchaToken} resetSignal={resetSignal} />
+        <Button type="submit" size="lg" className="w-full" loading={isSubmitting} disabled={captchaEnabled && !captchaToken}>
           Enviar link
         </Button>
       </form>

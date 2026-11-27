@@ -1,14 +1,16 @@
 import { z } from 'zod';
+import { containsEmailName, isCommonPassword } from './passwordPolicy';
 
 const email = z.string().trim().min(1, 'Informe seu e-mail.').email('Informe um e-mail válido.');
 
-/** Senha nova: 8 a 72 caracteres (limite do bcrypt), com ao menos uma letra e um número. */
+/** Senha nova: 10 a 72 caracteres (limite do bcrypt), com ao menos uma letra e um número, e que não seja uma senha comum. */
 const newPassword = z
   .string()
-  .min(8, 'A senha deve ter pelo menos 8 caracteres.')
+  .min(10, 'A senha deve ter pelo menos 10 caracteres.')
   .max(72, 'A senha deve ter no máximo 72 caracteres.')
   .regex(/[A-Za-z]/, 'Inclua ao menos uma letra.')
-  .regex(/\d/, 'Inclua ao menos um número.');
+  .regex(/\d/, 'Inclua ao menos um número.')
+  .refine((v) => !isCommonPassword(v), 'Essa senha é muito comum. Escolha outra.');
 
 export const loginSchema = z.object({
   email,
@@ -20,6 +22,10 @@ export const signupSchema = z
   .refine((v) => v.password === v.confirmPassword, {
     path: ['confirmPassword'],
     message: 'As senhas não conferem.',
+  })
+  .refine((v) => !containsEmailName(v.password, v.email), {
+    path: ['password'],
+    message: 'A senha não pode conter o seu e-mail.',
   });
 
 export const forgotSchema = z.object({ email });

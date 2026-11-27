@@ -8,11 +8,15 @@ import { Input } from '@/components/ui/Field';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { AuthLayout } from '@/features/auth/AuthLayout';
 import { signUp } from '@/features/auth/authService';
+import { captchaEnabled } from '@/features/auth/captcha';
 import { signupSchema, type SignupValues } from '@/features/auth/schemas';
+import { Turnstile } from '@/features/auth/Turnstile';
 
 export function SignupPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   const {
     register,
@@ -25,7 +29,8 @@ export function SignupPage() {
 
   const onSubmit = handleSubmit(async (values) => {
     setServerError(null);
-    const result = await signUp(values.email, values.password);
+    const result = await signUp(values.email, values.password, captchaToken ?? undefined);
+    setResetSignal((n) => n + 1);
     if (result.error) setServerError(result.error);
     else if (result.needsConfirmation) setSentTo(values.email);
     // Sem confirmação exigida: a sessão é criada e GuestOnly redireciona para /app.
@@ -61,12 +66,13 @@ export function SignupPage() {
         <PasswordInput
           label="Senha"
           autoComplete="new-password"
-          hint="Mínimo de 8 caracteres, com letras e números."
+          hint="Mínimo de 10 caracteres, com letras e números."
           error={errors.password?.message}
           {...register('password')}
         />
         <PasswordInput label="Confirme a senha" autoComplete="new-password" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
-        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+        <Turnstile onToken={setCaptchaToken} resetSignal={resetSignal} />
+        <Button type="submit" size="lg" className="w-full" loading={isSubmitting} disabled={captchaEnabled && !captchaToken}>
           Criar conta
         </Button>
         <p className="text-xs text-faint">

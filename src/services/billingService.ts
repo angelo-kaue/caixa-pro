@@ -1,3 +1,4 @@
+import { isTrustedCheckoutUrl } from '@/domain/checkoutUrl';
 import { getSupabase } from '@/lib/supabase';
 import type { SubscriptionInfo } from '@/types/db';
 
@@ -39,7 +40,7 @@ export async function createCheckout(plan: 'pro', mode: 'card' | 'pix', payerEma
   const { data, error } = await getSupabase().functions.invoke('create-checkout', { body: { plan, mode, ...(payerEmail ? { payerEmail } : {}) } });
   if (error) throw await failure(error);
   const url = (data as { url?: unknown } | null)?.url;
-  if (typeof url !== 'string' || !url.startsWith('https://')) throw new Error(mapBillingError(null));
+  if (typeof url !== 'string' || !isTrustedCheckoutUrl(url)) throw new Error(mapBillingError(null));
   return url;
 }
 

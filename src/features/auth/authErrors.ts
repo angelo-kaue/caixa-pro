@@ -12,7 +12,7 @@ export function mapAuthError(error: unknown): string {
     case 'email_exists':
       return 'Não foi possível criar a conta com esses dados.';
     case 'weak_password':
-      return 'Escolha uma senha mais forte: mínimo de 8 caracteres, com letras e números.';
+      return 'Escolha uma senha mais forte: mínimo de 10 caracteres, com letras e números.';
     case 'same_password':
       return 'A nova senha precisa ser diferente da atual.';
     case 'over_email_send_rate_limit':

@@ -5,25 +5,26 @@ export interface AuthResult {
   error: string | null;
 }
 
-export async function signIn(email: string, password: string): Promise<AuthResult> {
-  const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+export async function signIn(email: string, password: string, captchaToken?: string): Promise<AuthResult> {
+  const { error } = await getSupabase().auth.signInWithPassword({ email, password, ...(captchaToken ? { options: { captchaToken } } : {}) });
   return { error: error ? mapAuthError(error) : null };
 }
 
 /** needsConfirmation=true também cobre e-mail já cadastrado (o Supabase não sinaliza), evitando enumeração de contas. */
-export async function signUp(email: string, password: string): Promise<AuthResult & { needsConfirmation: boolean }> {
+export async function signUp(email: string, password: string, captchaToken?: string): Promise<AuthResult & { needsConfirmation: boolean }> {
   const { data, error } = await getSupabase().auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback`, ...(captchaToken ? { captchaToken } : {}) },
   });
   if (error) return { error: mapAuthError(error), needsConfirmation: false };
   return { error: null, needsConfirmation: data.session === null };
 }
 
-export async function requestPasswordReset(email: string): Promise<AuthResult> {
+export async function requestPasswordReset(email: string, captchaToken?: string): Promise<AuthResult> {
   const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/redefinir-senha`,
+    ...(captchaToken ? { captchaToken } : {}),
   });
   return { error: error ? mapAuthError(error) : null };
 }

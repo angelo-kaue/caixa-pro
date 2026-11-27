@@ -89,7 +89,7 @@ export function ResetPasswordPage() {
     <AuthLayout title="Nova senha" subtitle="Escolha uma senha nova para a sua conta.">
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {serverError && <Alert tone="error">{serverError}</Alert>}
-        <PasswordInput label="Nova senha" autoComplete="new-password" hint="Mínimo de 8 caracteres, com letras e números." error={errors.password?.message} {...register('password')} />
+        <PasswordInput label="Nova senha" autoComplete="new-password" hint="Mínimo de 10 caracteres, com letras e números." error={errors.password?.message} {...register('password')} />
         <PasswordInput label="Confirme a nova senha" autoComplete="new-password" error={errors.confirmPassword?.message} {...register('confirmPassword')} />
         <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
           Salvar senha

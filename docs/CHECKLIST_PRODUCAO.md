@@ -17,6 +17,7 @@ Segredos que devem existir em produção (`npx supabase secrets list` mostra só
 - `VITE_BILLING_ENABLED=true` (sem isso a página de plano diz que a contratação não está disponível)
 - `VITE_CARD_ENABLED=false` enquanto o cartão estiver desligado
 - `VITE_VAPID_PUBLIC_KEY` (chave pública dos lembretes; sem ela a seção "Lembretes" não aparece)
+- `VITE_TURNSTILE_SITE_KEY` (verificação anti-robô no login; ver `docs/SEGURANCA.md`)
 Depois de mudar qualquer variável: Deploys > Trigger deploy > **Clear cache and deploy site** (variáveis `VITE_` entram no build).
 
 ## 4. Teste rápido depois do deploy (2 minutos, Ctrl+F5 antes)
@@ -28,5 +29,9 @@ Depois de mudar qualquer variável: Deploys > Trigger deploy > **Clear cache and
 - Tocar no nome "CaixaPro" no topo leva ao Resumo; no celular, tocar num campo não dá zoom.
 - Abrir no celular instalado (PWA) e repetir o login.
 
-## 5. Beta fechado
+## 5. Segurança
+- Siga a seção "Configurar fora do código" de `docs/SEGURANCA.md` (CAPTCHA, limites do Supabase, senha mínima, URLs, verificação em duas etapas).
+- Depois de mexer em dependências: `npm audit --omit=dev` (restam só `zod` e `react-router`, riscos aceitos no documento).
+
+## 6. Beta fechado
 - O Pro liberado por SQL vence em datas diferentes por conta; confira a coluna `access_until` em `subscriptions` antes de acabar.
